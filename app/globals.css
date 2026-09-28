@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 226, 232, 240;
+  --background-rgb: 15, 23, 42;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+* { box-sizing: border-box; }
+:focus-visible { outline: 2px solid #5eead4; outline-offset: 4px; }
+button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
+.cd-shell { max-width: 1080px; margin: auto; padding: 0 24px; }
+.cd-app-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:18px 24px; border-bottom:1px solid #293b4d; }
+.cd-navigation { display:flex; gap:6px; padding:12px 24px; border-bottom:1px solid #293b4d; }
+.cd-navigation a { padding:10px 16px; border-radius:8px; color:#a8b9c9; font-size:14px; }
+.cd-navigation a:hover { background:#1d3041; }
+.cd-navigation a[aria-current=page] { color:#b5f5e5; background:#25413f; }
+.cd-details { padding:14px 16px; border:1px solid #334955; border-radius:10px; }
+.cd-details summary { cursor:pointer; font-size:13px; color:#bbcad7; }
+.cd-topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:24px 0; border-bottom:1px solid #2b414c; }
+.cd-wordmark { font-weight:750; font-size:22px; letter-spacing:-.8px; }
+.cd-wordmark span { font-size:13px; color:#98abb8; font-weight:400; letter-spacing:0; }
+.cd-hero { padding:24px 0; max-width:850px; }
+.cd-eyebrow { color:#72ddc2; font-size:11px; letter-spacing:2px; font-weight:600; }
+.cd-hero h1 { font-size:clamp(26px,3vw,36px); line-height:1.2; letter-spacing:-1px; font-weight:600; margin:0 0 12px; }
+.cd-hero h1 span { color:#82dec9; }
+.cd-hero>p:last-child { color:#a7b7c6; max-width:660px; line-height:1.7; }
+.cd-demo-notice { padding:12px 16px; background:#223445; border:1px solid #415568; border-radius:10px; font-size:12px; color:#becbd6; margin-bottom:20px; }
+.cd-demo-grid { display:grid; grid-template-columns:1.45fr 1fr; gap:20px; }
+.cd-scene-card,.cd-decision-card { border:1px solid #334955; border-radius:16px; overflow:hidden; background:#12232e; }
+.cd-card-heading { padding:16px; display:flex; justify-content:space-between; gap:12px; color:#a5bcc8; font-size:10px; letter-spacing:.6px; }
+.cd-scene-card svg { width:100%; display:block; }
+.cd-decision-card { padding:28px; }
+.cd-decision-card h2 { font-size:27px; font-weight:600; letter-spacing:-.7px; margin:18px 0 12px; }
+.cd-decision-card>p:not(.cd-eyebrow) { color:#a7b7c6; font-size:14px; line-height:1.65; }
+.cd-verdict { background:#5eead40a; border-left:3px solid #5eead4; padding:15px; margin:22px 0; }
+.cd-verdict span { color:#82dec9; font-size:10px; letter-spacing:1.5px; }
+.cd-verdict p { margin-top:8px; font-size:13px; line-height:1.55; }
+.cd-warning { border-color:#f0ac70; background:#f0ac700a; }
+.cd-warning span { color:#f0ac70; }
+.cd-step-list { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin:20px 0 42px; }
+.cd-step-list button { text-align:left; padding:12px; border-bottom:2px solid #334955; font-size:11px; color:#a7b7c6; }
+.cd-step-list button span { display:block; margin-bottom:8px; color:#637e90; }
+.cd-step-list [aria-current=step] { color:#a6f1df; border-color:#82dec9; background:#5eead408; }
+.cd-principles { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding-bottom:32px; }
+.cd-principles article>span { color:#6b9298; font-size:12px; }
+.cd-principles h3 { margin:10px 0; font-weight:600; font-size:15px; }
+.cd-principles p { color:#92a8b8; font-size:13px; line-height:1.7; }
+.cd-footer { border-top:1px solid #2b414c; padding:24px 0; display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:11px; color:#92a8b8; }
+@media(max-width:760px) { .cd-shell{padding:0 18px}.cd-demo-grid,.cd-principles{grid-template-columns:1fr}.cd-step-list{grid-template-columns:repeat(4,1fr)}.cd-topbar,.cd-footer{flex-wrap:wrap}.cd-hero{padding-top:32px}.cd-wordmark span{display:none} }
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+@layer components {
+  .cleardrop-controls {
+    @apply mt-4 rounded-2xl border border-slate-700 bg-slate-900 p-5;
+  }
+  .cd-button {
+    @apply rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .cd-primary {
+    @apply bg-teal-300 text-slate-950 border-teal-300 hover:bg-teal-200;
+  }
+  .card {
+    @apply bg-dash-panel rounded-xl border border-slate-700 p-4;
+  }
+}
