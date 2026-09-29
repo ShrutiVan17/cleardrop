@@ -1,4 +1,4 @@
-# ClearDrop demo — target 2 minutes 40 seconds
+# ClearDrop product walkthrough
 
 Record only what actually runs. Hide tokens and personal account details. Rehearse once. Do not use copyrighted music. The illustrative route is a simulation, not Ring video.
 
@@ -12,9 +12,9 @@ Show `/demo` hero. Say: “A delivery can reach the right address and still bloc
 
 ## 0:20–1:05 — actual Ring integration
 
-Switch to `/`, click Start Live Stream and show moving Ring footage. Open Connection details to show received frames. Say: “This is Ring sandbox video arriving through WHEP and WebRTC. Connection accepted is not enough—we check whether frames arrive.”
+Switch to `/`, choose Start camera and show moving Ring footage. Open Testing & connection details to show received frames. Say: “This is Ring sandbox video arriving through WHEP and WebRTC. Connection accepted is not enough—we check whether frames arrive.”
 
-Show Edit doorway zone and the numeric controls. If the selected scene has a genuinely empty zone, save the reference. Otherwise explain calibration and do not mark an occupied doorway as empty. Say: “The calibrated detector finds persistent scene changes. It does not know whether the change is a parcel; the viewer reviews it.”
+Show Change doorway area and the position fields. If the selected scene has a genuinely empty area, choose Area is empty — start watching. Otherwise explain the empty reference and do not mark an occupied doorway as empty. Say: “The change detector finds persistent scene changes. It does not know whether the change is a parcel; the viewer reviews it.”
 
 ## 1:05–1:55 — decision lifecycle, explicitly simulated
 
@@ -28,6 +28,7 @@ Open Test a clip. Show upload, model selection and report controls without prete
 
 ## 2:20–2:40 — close
 
-Return to the simulation's final state. Say: “ClearDrop's contribution is a local-first review workflow with explicit uncertainty, backed by tested geometry and state rules. Next: representative clip evaluation and feedback from people with mobility needs. This is a hackathon prototype, not a safety system.”
+Return to the simulation's final state. Say: “ClearDrop is a local-first review workflow with explicit uncertainty, backed by tested geometry and state rules. Next: representative clip evaluation and feedback from people with mobility needs. This is an experimental prototype, not a safety system.”
 
-Publish a public English video shorter than three minutes, then paste its URL into Devpost. A real Ring integration segment is required; do not submit the illustrated simulation alone.
+Keep real Ring footage and illustrated examples clearly labelled when sharing a demonstration.
+

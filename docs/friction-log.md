@@ -1,4 +1,4 @@
-# Developer friction log — draft observations, not submitted
+# Developer experience notes
 
 ## 1. A negotiated Ring session is not proof of playback
 
@@ -33,3 +33,4 @@
 - Severity: medium.
 - Workaround: explicit opt-in loading, progress, cancellation, worker isolation, local frames and no API key; reject stale outputs.
 - Suggestion: a smaller parcel-focused model and representative evaluation footage would improve the experience. Do not describe successful loading as validated recognition.
+

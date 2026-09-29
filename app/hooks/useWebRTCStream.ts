@@ -160,7 +160,7 @@ export function useWebRTCStream({ videoRef, deviceId }: UseWebRTCStreamOptions):
         if (hadVideo && Date.now() - lastFrameAt > 8000) {
           setStreamActive(false)
           setConnecting(false)
-          setStreamError('Video ended or stopped arriving. Ring live sessions are time-limited. Click Start Live Stream to reconnect.')
+          setStreamError('The video stopped. Ring sessions are time-limited. Choose Reconnect camera to start a new session.')
           if (timerRef.current) clearInterval(timerRef.current)
           pcRef.current = null
           pc.close()
@@ -213,3 +213,4 @@ export function useWebRTCStream({ videoRef, deviceId }: UseWebRTCStreamOptions):
 
   return { streamActive, connecting, diagnostics, streamError, startStream, stopStream }
 }
+

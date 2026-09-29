@@ -23,3 +23,4 @@ test('Grounding DINO aliases normalize only explicit parcel phrases',()=>{
  assert.equal(normalize('a doormat'),'a doormat')
  assert.equal(normalize('a person cardboard box'),'a person cardboard box')
 })
+

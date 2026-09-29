@@ -3,13 +3,13 @@ import { packagesInZone, trackPackage, Detection } from './package-detection'
 
 export const DEMO_ZONE = {x:.3,y:.5,w:.4,h:.4}
 export const DEMO_STEPS = [
-  {title:'An ordinary delivery',detail:'A parcel beside the doorway should not become an obstruction alert.',kind:'outside',at:0},
-  {title:'The wrong place',detail:'A parcel overlaps the doorway. One observation is not enough to alert.',kind:'inside',at:1000},
-  {title:'Review required',detail:'Repeated overlapping observations span three seconds. The app asks a person to review.',kind:'inside',at:4000},
-  {title:'Connection lost',detail:'Missing video is not evidence of removal. The previous obstruction remains unresolved.',kind:'offline',at:5000},
-  {title:'Checking removal',detail:'Video returns without an overlapping parcel. One clear scan cannot resolve the alert.',kind:'empty',at:6000},
-  {title:'Still verifying',detail:'A second observation agrees. The removal verification window is not finished.',kind:'empty',at:8000},
-  {title:'Removal observed',detail:'Three non-overlapping scans across five seconds resolve the observation—not a safety guarantee.',kind:'empty',at:11000},
+  {title:'A parcel beside the door',detail:'The delivery is outside the marked area. There’s no need to ask you to check it.',kind:'outside',at:0},
+  {title:'Too close to the entrance',detail:'A parcel is now in the marked area. ClearDrop waits to see whether it stays there.',kind:'inside',at:1000},
+  {title:'Time to take a look',detail:'The parcel has stayed in the doorway for three seconds. Check the view and move it if needed.',kind:'inside',at:4000},
+  {title:'The camera loses connection',detail:'We can’t see whether the parcel was moved. The earlier alert stays open.',kind:'offline',at:5000},
+  {title:'The view is back',detail:'The parcel appears to be gone. ClearDrop checks again before closing the alert.',kind:'empty',at:6000},
+  {title:'One more check',detail:'The marked area still looks empty. ClearDrop waits a little longer to confirm the change.',kind:'empty',at:8000},
+  {title:'The parcel has been moved',detail:'The area stayed empty across three checks over five seconds. The alert is closed. Always check for yourself.',kind:'empty',at:11000},
 ] as const
 
 export function demoState(index:number) {
@@ -24,3 +24,4 @@ export function demoState(index:number) {
   }
   return state
 }
+

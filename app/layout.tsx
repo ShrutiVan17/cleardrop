@@ -7,10 +7,12 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-dash-dark text-slate-200">
+    <html lang="en">
+      <body className="min-h-screen">
+        <a href="#main-content" className="cd-skip-link">Skip to content</a>
         {children}
       </body>
     </html>
   )
 }
+

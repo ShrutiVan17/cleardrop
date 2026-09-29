@@ -31,3 +31,4 @@ try {
 } finally { $check.Dispose() }
 Get-Item -LiteralPath $zipPath | Select-Object FullName,Length
 Get-FileHash -LiteralPath $zipPath -Algorithm SHA256
+
