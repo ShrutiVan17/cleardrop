@@ -5,7 +5,8 @@ import { getAuthMode, getAccessTokenExpiry, RingTokenExpiredError } from '@/lib/
 export async function GET(request: Request) {
   const denied = await previewAccess(request)
   if (denied) return denied
-  const mode = getAuthMode()
+  try {
+  const mode = getAuthMode(request)
 
   if (mode === null && process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     return NextResponse.json(
@@ -16,14 +17,17 @@ export async function GET(request: Request) {
 
   if (mode === null) {
     return NextResponse.json(
-      { error: 'Authentication not configured. Set RING_ACCESS_TOKEN or RING_REFRESH_TOKEN in .env.local' },
+      { error: 'Use Connect Ring preview to connect a camera.' },
       { status: 400 }
     )
   }
 
-  const expiresAt = getAccessTokenExpiry()
+  const expiresAt = getAccessTokenExpiry(request)
   if (expiresAt !== null && Date.now() >= expiresAt) {
     return NextResponse.json({ error: new RingTokenExpiredError().message }, { status: 401 })
   }
   return NextResponse.json({ mode, expiresAt })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Ring connection unavailable.' }, { status: 401 })
+  }
 }

@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const denied = await previewAccess(request)
   if (denied) return denied
   try {
-    await getAccessToken()
+    await getAccessToken(request)
     return NextResponse.json({ configured: true })
   } catch (error) {
     console.error('Token error:', error)

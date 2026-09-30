@@ -1,7 +1,7 @@
 # ClearDrop
 A delivery should not block the doorway.
 
-ClearDrop is a local-first Ring prototype for marking doorway space, reviewing persistent changes, and keeping uncertainty visible when the camera disconnects.
+ClearDrop is a local-first doorway-access prototype: a delivery photo tells you what arrived; ClearDrop helps you review whether a personally marked keep-clear area changed, whether the change persisted, and whether removal is actually known. A camera disconnect is not an all-clear. It does not measure physical clearance or guarantee safety.
 
 ## Start
 Verified with Node.js 24.19.0 and pnpm 11.19.0.
@@ -14,7 +14,7 @@ pnpm dev
 Open http://127.0.0.1:3000 and choose:
 
 - **My doorway** — real camera or Ring sandbox video. Requires a Ring token.
-- **Try a demo** — seven illustrated steps using the actual decision rules. No token needed.
+- **Try a demo** — three labelled scenarios: a parcel beside the zone, a blocked zone followed by removal, and lost video during an alert. Scripted observations exercise the decision rules; no token needed.
 
 Clip testing is available under **Testing & connection details**. Experimental recognition stays under **More options**, outside the main workflow.
 
@@ -22,10 +22,10 @@ The demo is a labelled simulation, not proof of AI recognition or actual Ring pl
 
 ## Connect Ring
 1. Generate a temporary token in the [Ring Playground](https://developer.amazon.com/ring/console/playground).
-2. Create `.env.local` with `RING_ACCESS_TOKEN=your_token_here`.
-3. Restart the server. Choose **My doorway**, then **Start camera**. Adjust the marked area if needed and choose **Area is empty — start watching**, only **while the area is empty**.
+2. On **My doorway**, paste the token into **Connect Ring preview**. The server validates it with Ring before saving a per-browser session. No environment-file change or deployment is required. Alternatively, set `RING_ACCESS_TOKEN` privately on the server.
+3. Choose a discovered camera, then **Start camera**. Adjust the marked area if needed and choose **Area is empty — start watching**, only **while the area is empty**.
 
-Never commit the token. Renew it when it expires. For replay testing, clips and frames stay on your device.
+Never commit the token. Renew it when it expires. Browser Ring connections use an opaque HttpOnly cookie and bounded single-process server memory; server restarts or sleeping-container replacement can end the session. These connections require one server replica and are not a durable production OAuth system. For replay testing, clips and frames stay on your device.
 
 ## Features
 - Phone camera testing at `/phone`: real rear-camera input, the same doorway checks, no Ring token. Supports home-screen launch; keep the page visible. Frames stay on that device, with no remote viewing or background monitoring. Phone testing does not validate Ring pairing or model accuracy.

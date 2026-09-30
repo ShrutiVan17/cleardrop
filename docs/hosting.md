@@ -23,7 +23,9 @@ The local `pnpm dev` and `pnpm start` commands remain loopback-only. `pnpm start
 
 Do not upgrade to a paid plan to run this preview. Railway's trial and subsequent free monthly allowance are limited and shared with other projects. Enable application sleeping to conserve credits. A sleeping app may take time to wake. Free hosting does not guarantee continuous availability.
 
-Playground tokens expire, usually after about 30 minutes. To restore live video, replace `RING_ACCESS_TOKEN` in the service variables and redeploy. Hosting cannot extend the token lifetime. The illustrated demo does not require a Ring token, but still requires preview sign-in.
+Playground tokens expire, usually after about 30 minutes. Use **Connect Ring preview** on the doorway page to validate a fresh token and reconnect without redeploying. Tokens submitted there live in server memory, keyed by an opaque HttpOnly, SameSite cookie; sessions are isolated between browsers and expire no later than the token (maximum four hours). Expired entries are pruned on the next session access. Keep one replica. Server restarts or sleeping-container replacement can end these temporary sessions. Disconnecting leaves a signed-out marker so that browser does not silently fall back to the server owner's token. The environment-variable workflow remains available for the single-owner fallback connection. Hosting cannot extend token lifetime.
+
+The three illustrated scenarios require no Ring token, but still require preview sign-in. They are simulated tests, not footage from a Ring camera or evidence of recognition accuracy. Physical Ring linking and sustained hardware playback remain to be verified with approved credentials and hardware.
 
 Recognition remains experimental. Hosting does not improve model accuracy. Camera frames and recordings stay in the browser; monitoring stops when the page closes. No background alert service is included.
 

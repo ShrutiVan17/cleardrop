@@ -1,6 +1,6 @@
 import { previewAccess } from '@/lib/preview-access'
 import { NextResponse } from 'next/server'
-import { getAccessToken } from '@/lib/auth'
+import { getAccessToken, getAuthMode } from '@/lib/auth'
 
 const DEVICE_ID = process.env.NEXT_PUBLIC_RING_DEVICE_ID
 const DEVICE_NAME = process.env.NEXT_PUBLIC_RING_DEVICE_NAME || 'Camera'
@@ -10,16 +10,17 @@ export async function GET(request: Request) {
   const denied = await previewAccess(request)
   if (denied) return denied
   try {
-    const token = await getAccessToken()
+    const token = await getAccessToken(request)
 
     // In access token mode, always auto-discover (ignore NEXT_PUBLIC_RING_DEVICE_ID)
-    const isAccessTokenMode = !!process.env.RING_ACCESS_TOKEN
+    const isAccessTokenMode = getAuthMode(request) === 'access_token'
     const useConfiguredDevice = DEVICE_ID && !isAccessTokenMode
 
     // If device ID is configured (refresh token mode only), use it directly
     if (useConfiguredDevice) {
       const statusRes = await fetch(`${API_BASE}/v1/devices/${DEVICE_ID}/status`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(12000), redirect: 'error', cache: 'no-store',
       })
 
       let online = false
@@ -41,12 +42,12 @@ export async function GET(request: Request) {
     // Auto-discover devices using the token
     const res = await fetch(`${API_BASE}/v1/devices`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(12000), redirect: 'error', cache: 'no-store',
     })
 
     if (!res.ok) {
-      const error = await res.text()
       return NextResponse.json(
-        { devices: [], error: `Device discovery failed: ${res.status} - ${error}` },
+        { devices: [], error: res.status === 401 ? 'Your Ring token was rejected. Use Connect Ring preview with a fresh token.' : 'Ring camera discovery is unavailable. Please try again.' },
         { status: res.status }
       )
     }

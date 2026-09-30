@@ -14,6 +14,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
   const [ready, setReady] = useState(false)
   const [ratio, setRatio] = useState(0)
   const [blocked, setBlocked] = useState(false)
+  const [unresolved, setUnresolved] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
@@ -40,6 +41,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
   useEffect(() => {
     reset()
     setEntries([])
+    setUnresolved(false)
     try {
       const value = JSON.parse(localStorage.getItem(`cleardrop.zone.${deviceId || 'default'}`) || 'null')
       setZone(validZone(value) ? value : defaultZone)
@@ -76,7 +78,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     try {
       if (!validZone(zone)) throw new Error('Mark a doorway area inside the video first.')
       baseline.current = capture(); persistence.current = emptyPersistence()
-      setReady(true); setBlocked(false); setConfirmed(false); setError(''); setRatio(0)
+      setReady(true); setBlocked(false); setUnresolved(false); setConfirmed(false); setError(''); setRatio(0)
       log('Reference saved', 'Current frame marked as an empty doorway. Monitoring started.')
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not capture reference') }
   }
@@ -93,9 +95,11 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
         const next = advanceDetection(previous, score, performance.now())
         persistence.current = next; setRatio(score); setBlocked(next.active)
         if (next.active && !previous.active) {
+          setUnresolved(true)
           setConfirmed(false)
           log('Possible obstruction', 'A persistent change appeared inside the doorway zone. Review the video.')
         } else if (!next.active && previous.active) {
+          setUnresolved(false)
           setConfirmed(false); log('Change cleared', 'The doorway looks similar to the saved reference again.')
         }
       } catch (e) { setError(e instanceof Error ? e.message : 'Analysis failed'); setReady(false) }
@@ -107,7 +111,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     const rect = overlay.current!.getBoundingClientRect()
     return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) }
   }
-  const title = !active ? 'Start the camera to begin' : editing ? 'Mark the space to keep clear' : packages.alert ? 'Please check your doorway' : !ready ? 'Is the marked area empty?' : blocked ? confirmed ? 'You confirmed a parcel is in the way' : 'Something changed near your door' : 'Watching your doorway'
+  const title = !active ? unresolved ? 'Camera paused — earlier change still needs review' : 'Start the camera to begin' : editing ? 'Mark the space to keep clear' : packages.alert ? 'Please check your doorway' : !ready ? 'Is the marked area empty?' : blocked ? confirmed ? 'You confirmed a parcel is in the way' : 'Something changed near your door' : 'Watching your doorway'
 
   return <>
     {active && fit.width > 0 && videoRef.current?.parentElement && createPortal(<div ref={overlay} aria-label="Doorway zone editor" style={{ ...fit, position: 'absolute', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none', zIndex: 5 }}
@@ -122,6 +126,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     </div>, videoRef.current.parentElement)}
     <section className="cleardrop-controls" aria-label="ClearDrop monitoring">
       <h2 className="text-xl font-semibold" role="status" aria-live="polite">{title}</h2>
+      {unresolved && (!active || !ready) && <p className="cd-review-alert" role="alert">The earlier doorway change has not been verified as removed. Reconnect, check the area yourself, and save a new empty reference only when it is actually clear.</p>}
       <p className="cd-help">{!active ? 'You’ll be able to mark the doorway once the video is playing.' : editing ? 'Drag a box over the doorway in the video, or use the position fields below.' : !ready ? 'Keep the marked area empty, then start watching. Change the area if it doesn’t cover your doorway.' : 'We’ll ask you to check if a change stays in the marked area. Keep this page open.'}</p>
       {active && <div className="flex flex-wrap gap-3 mt-4">
         {editing ? <button className="cd-button cd-primary" onClick={() => {
@@ -137,7 +142,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
       {blocked && <div role="alert" className="cd-review-alert"><p>{confirmed ? 'You confirmed a parcel is blocking the marked area.' : 'A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?'}</p><div className="flex flex-wrap gap-2 mt-3">{!confirmed && <button className="cd-button" onClick={() => {setConfirmed(true);log('Package confirmed', 'Manually confirmed by the viewer.')}}>Yes, there’s a parcel</button>}<button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
       {packages.status!=='off' && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
       {error && <p role="alert" className="cd-error mt-3">{error}</p>}
-      <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review.</p>
+      <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review. This does not measure parcel size or physical walking clearance.</p>
       <details className="cd-details mt-4">
         <summary>More options</summary>
         {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><button className="cd-button" disabled={editing} onClick={calibrate}>Save a new empty reference</button></div>}
@@ -153,4 +158,3 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     </section>
   </>
 }
-

@@ -2,20 +2,21 @@
 // 1. Access token (RING_ACCESS_TOKEN) — use directly, no other credentials needed
 // 2. Refresh token (RING_REFRESH_TOKEN) — auto-renewing, requires client credentials
 
+import { sessionToken } from './ring-session'
 export type AuthMode = 'access_token' | 'refresh_token'
 
 let cachedToken: { token: string; expiresAt: number } | null = null
 
 export class RingTokenExpiredError extends Error {
   constructor() {
-    super('Your Ring playground token has expired. Generate a new token in the Ring Playground, update RING_ACCESS_TOKEN in .env.local, then reload this app.')
+    super('Your Ring token has expired. Generate a fresh token in Ring Playground and use Connect Ring preview to reconnect.')
     this.name = 'RingTokenExpiredError'
   }
 }
 
 // Read expiry only for UI/preflight checks; Ring still validates the token.
-export function getAccessTokenExpiry(): number | null {
-  const token = process.env.RING_ACCESS_TOKEN
+export function getAccessTokenExpiry(request?: Request): number | null {
+  const token = sessionToken(request) || process.env.RING_ACCESS_TOKEN
   if (!token) return null
   try {
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'))
@@ -23,7 +24,8 @@ export function getAccessTokenExpiry(): number | null {
   } catch { return null }
 }
 
-export function getAuthMode(): AuthMode | null {
+export function getAuthMode(request?: Request): AuthMode | null {
+  if (sessionToken(request)) return 'access_token'
   if (process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     return null // conflict
   }
@@ -32,7 +34,9 @@ export function getAuthMode(): AuthMode | null {
   return null
 }
 
-export async function getAccessToken(): Promise<string> {
+export async function getAccessToken(request?: Request): Promise<string> {
+  const browserToken = sessionToken(request)
+  if (browserToken) return browserToken
   // Conflict check
   if (process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     throw new Error(

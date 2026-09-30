@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const token = await getAccessToken()
+    const token = await getAccessToken(request)
     const whepUrl = `${API_BASE}/v1/devices/${resolvedDeviceId}/media/streaming/whep/sessions`
 
     const response = await fetch(whepUrl, {
@@ -48,9 +48,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.ok) {
-      const error = await response.text()
       return NextResponse.json(
-        { error: response.status === 401 ? 'Ring rejected the token. Renew your playground token in .env.local and reload the app.' : `WHEP failed: ${response.status} - ${error}` },
+        { error: response.status === 401 ? 'Ring rejected the token. Use Connect Ring preview with a fresh token.' : `WHEP failed: ${response.status}` },
         { status: response.status }
       )
     }
@@ -78,7 +77,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid Ring session URL' }, { status: 400 })
     }
 
-    const token = await getAccessToken()
+    const token = await getAccessToken(request)
     const response = await fetch(sessionUrl, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },

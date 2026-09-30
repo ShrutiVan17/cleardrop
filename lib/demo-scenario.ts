@@ -12,10 +12,17 @@ export const DEMO_STEPS = [
   {title:'The parcel has been moved',detail:'The area stayed empty across three checks over five seconds. The alert is closed. Always check for yourself.',kind:'empty',at:11000},
 ] as const
 
-export function demoState(index:number) {
+export type DemoStep = { title: string; detail: string; kind: 'outside' | 'inside' | 'offline' | 'empty'; at: number }
+export const DEMO_CASES: { id: string; title: string; expected: string; steps: readonly DemoStep[] }[] = [
+  { id: 'beside', title: '1. Parcel beside the doorway', expected: 'No zone-overlap alert: a delivery alone is not an obstruction.', steps: [DEMO_STEPS[0], { ...DEMO_STEPS[0], at: 4000, title: 'Still outside your keep-clear area', detail: 'The parcel stays beside the marked area. Its presence alone does not need an obstruction alert.' }] },
+  { id: 'blocked', title: '2. Parcel blocks the doorway', expected: 'Review the persistent overlap, then verify removal over repeated observations.', steps: [DEMO_STEPS[0], DEMO_STEPS[1], DEMO_STEPS[2], { ...DEMO_STEPS[4], at: 5000 }, { ...DEMO_STEPS[5], at: 7000 }, { ...DEMO_STEPS[6], at: 10000 }] },
+  { id: 'offline', title: '3. Connection lost during an alert', expected: 'Keep the earlier obstruction unresolved. Offline must never mean all clear.', steps: [{ ...DEMO_STEPS[1], at: 0 }, { ...DEMO_STEPS[2], at: 3000 }, { ...DEMO_STEPS[3], at: 4000 }] },
+]
+
+export function demoState(index:number, steps: readonly DemoStep[] = DEMO_STEPS) {
   let state=initialDoorwayState()
   let track:ReturnType<typeof trackPackage>=null
-  for(const step of DEMO_STEPS.slice(0,index+1)) {
+  for(const step of steps.slice(0,index+1)) {
     if(step.kind==='offline'){state=pauseDoorway(state);track=null;continue}
     const detections:Detection[]=step.kind==='empty'?[]:[{label:'a cardboard box',score:.8,box:step.kind==='outside'?{xmin:.78,ymin:.6,xmax:.95,ymax:.8}:{xmin:.4,ymin:.62,xmax:.6,ymax:.82}}]
     const boxes=packagesInZone(detections,DEMO_ZONE)
@@ -24,4 +31,3 @@ export function demoState(index:number) {
   }
   return state
 }
-

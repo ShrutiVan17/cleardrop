@@ -53,7 +53,7 @@ test('cross-site writes are blocked and same-origin writes allowed', async () =>
   assert.equal(await check(new Request('http://localhost:3000/api/ring/stream', {method:'POST',headers:{authorization,host:'preview.example',origin:'https://preview.example'}})),null)
 })
 test('every Ring API handler checks access independently of middleware', () => {
-  for (const name of ['config','devices','token','stream','events']) {
+  for (const name of ['config','devices','token','stream','events','connect']) {
     const content=fs.readFileSync(path.join(root,`app/api/ring/${name}/route.ts`),'utf8')
     const handlers=content.match(/export async function (GET|POST|DELETE)/g)||[]
     assert.ok(handlers.length>0)

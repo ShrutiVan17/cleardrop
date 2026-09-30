@@ -2,20 +2,24 @@
 import { useState } from 'react'
 import { Header } from '../components/Header'
 import { AppNavigation } from '../components/AppNavigation'
-import { DEMO_STEPS, demoState } from '@/lib/demo-scenario'
+import { DEMO_CASES, demoState } from '@/lib/demo-scenario'
 
 export default function DemoPage(){
   const [index,setIndex]=useState(0)
-  const step=DEMO_STEPS[index],state=demoState(index)
-  const status = {unknown:'Camera offline',observing:index===6?'Parcel removed':'Nothing blocking the marked area',verifying:'Taking another look',obstructed:'Please check your doorway','checking-clear':'Checking that the parcel is gone'}[state.phase]
+  const [caseIndex,setCaseIndex]=useState(1)
+  const scenario=DEMO_CASES[caseIndex],steps=scenario.steps
+  const step=steps[index],state=demoState(index,steps)
+  const status = {unknown:'Camera offline',observing:'No zone obstruction in the scripted observations',verifying:'Taking another look',obstructed:'Please check your doorway','checking-clear':'Checking that the parcel is gone'}[state.phase]
   function download(){
-    const report={project:'ClearDrop',source:'scripted-simulation',notModelAccuracyEvidence:true,steps:DEMO_STEPS.slice(0,index+1).map((s,i)=>({...s,state:demoState(i)}))}
+    const report={project:'ClearDrop',source:'scripted-simulation',scenario:scenario.id,expected:scenario.expected,notModelAccuracyEvidence:true,steps:steps.slice(0,index+1).map((s,i)=>({...s,state:demoState(i,steps)}))}
     const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}))
     const a=document.createElement('a');a.href=url;a.download='cleardrop-simulation.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
   }
   return <><Header connected={false} enabledCount={0} simpleMode/><AppNavigation active="demo"/><main id="main-content" className="cd-shell" tabIndex={-1}>
-    <section className="cd-hero"><p className="cd-eyebrow">A QUICK LOOK</p><h1>A delivery. A little too close.</h1><p>Follow a parcel from delivery to removal. See when ClearDrop asks you to check.</p></section>
+    <section className="cd-hero"><p className="cd-eyebrow">A QUICK LOOK</p><h1>Not every delivery blocks your way.</h1><p>Three tests of what matters: where a parcel sits, whether it stays, and what we know when video disappears.</p></section>
     <div className="cd-demo-notice"><strong>Demo only</strong><span>Illustrated examples, not live camera footage or an AI accuracy test.</span></div>
+    <label className="block mb-5">Choose a test<select className="cd-input" value={caseIndex} onChange={event=>{setCaseIndex(Number(event.target.value));setIndex(0)}}>{DEMO_CASES.map((item,i)=><option key={item.id} value={i}>{item.title}</option>)}</select></label>
+    <p className="cd-help mb-5">Expected behavior: {scenario.expected}</p>
     <div className="cd-demo-grid">
       <section className="cd-scene-card" aria-label="Simulated doorstep">
         <div className="cd-card-heading"><span>Front entrance</span><span>{step.kind==='offline'?'Camera offline':'Illustrated demo'}</span></div>
@@ -30,10 +34,10 @@ export default function DemoPage(){
         </svg>
         <div className="cd-card-heading"><span>The outlined area is the space to keep clear.</span></div>
       </section>
-      <section className="cd-decision-card"><p className="cd-eyebrow">STEP {index+1} OF {DEMO_STEPS.length}</p><div className="cd-progress" aria-hidden="true">{DEMO_STEPS.map((_,i)=><span key={i} className={i<=index?'is-complete':''}/>)}</div><div aria-live="polite" aria-atomic="true"><h2>{step.title}</h2><p className="cd-step-description">{step.detail}</p><div className={`cd-verdict ${state.lastKnownObstruction?'cd-warning':''}`}><span>{state.lastKnownObstruction?'NEEDS YOUR ATTENTION':'DOORWAY UPDATE'}</span><p>{status}</p></div></div><div className="cd-demo-actions"><button className="cd-button" disabled={index===0} onClick={()=>setIndex(i=>Math.max(0,i-1))}>Back</button><button className="cd-button cd-primary" onClick={()=>setIndex(i=>i===DEMO_STEPS.length-1?0:i+1)}>{index===DEMO_STEPS.length-1?'Start again':'Next step'}<span aria-hidden="true"> →</span></button></div></section>
+      <section className="cd-decision-card"><p className="cd-eyebrow">STEP {index+1} OF {steps.length}</p><div className="cd-progress" aria-hidden="true">{steps.map((_,i)=><span key={i} className={i<=index?'is-complete':''}/>)}</div><div aria-live="polite" aria-atomic="true"><h2>{step.title}</h2><p className="cd-step-description">{step.detail}</p><div className={`cd-verdict ${state.lastKnownObstruction?'cd-warning':''}`}><span>{state.lastKnownObstruction?'NEEDS YOUR ATTENTION':'DOORWAY UPDATE'}</span><p>{status}</p></div></div><div className="cd-demo-actions"><button className="cd-button" disabled={index===0} onClick={()=>setIndex(i=>Math.max(0,i-1))}>Back</button><button className="cd-button cd-primary" onClick={()=>setIndex(i=>i===steps.length-1?0:i+1)}>{index===steps.length-1?'Start again':'Next step'}<span aria-hidden="true"> →</span></button></div></section>
     </div>
-    <details className="cd-details cd-extra-tools"><summary>How this demo works</summary><p className="mb-4">These scripted examples use the app’s decision rules. It waits for repeated observations before raising or clearing an alert. Losing the video does not mean a parcel is gone. Real cameras and recognition models can miss things.</p><button className="cd-button" onClick={download}>Download demo report</button></details>
+    <details className="cd-details cd-extra-tools"><summary>How this demo works</summary><p className="mb-4">These scripted examples use the app’s decision rules. It waits for repeated observations before raising or clearing an alert. Losing the video does not mean a parcel is gone. These use scripted observations and simulated timing, not Ring footage or measured parcel dimensions. Real cameras and recognition models can miss things.</p><button className="cd-button" onClick={download}>Download demo report</button></details>
+    <p className="cd-help mt-5"><a className="cd-text-link" href="/phone">Try real changes with your phone</a> · <a className="cd-text-link" href="/">Connect Ring preview</a></p>
     <footer className="cd-footer"><p>Always check the doorway yourself. ClearDrop is a prototype, not a safety system.</p></footer>
   </main></>
 }
-

@@ -27,6 +27,11 @@ test('phone mode is isolated from Ring and explicit about limits',()=>{
   const source=fs.readFileSync(path.join(root,'app/phone/page.tsx'),'utf8')
   assert.doesNotMatch(source,/\/api\/ring/);assert.match(source,/visibilitychange/)
 })
+test('Ring connection asks only for a masked developer token and discloses hardware limits',()=>{
+  const {RingConnection}=load('app/components/RingConnection.tsx')
+  const html=render(React.createElement(RingConnection,{onConnected:()=>{}}))
+  assert.match(html,/type="password"/);assert.match(html,/Connect Ring/);assert.match(html,/Never enter your Amazon password/);assert.match(html,/does not yet provide that sign-in flow/)
+})
 
 test('main navigation offers only doorway and demo',()=>{
   const {AppNavigation}=load('app/components/AppNavigation.tsx')
@@ -41,6 +46,7 @@ test('demo clearly labels simulation and starts with two visible action buttons'
   const html=render(React.createElement(Demo))
   assert.match(html,/Demo only/)
   assert.match(html,/not live camera footage/)
+  assert.equal((html.match(/<option /g)||[]).length,3)
   assert.match(html,/id="main-content"/)
   const mainActions=html.split('<details')[0]
   assert.equal((mainActions.match(/<button /g)||[]).length,2)

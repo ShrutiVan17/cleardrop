@@ -5,10 +5,20 @@ function load(name){
  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../lib',name+'.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,c)
  return c.exports
 }
-const {demoState,DEMO_STEPS}=load('demo-scenario')
+const {demoState,DEMO_STEPS,DEMO_CASES}=load('demo-scenario')
 const {normalizeGroundedLabel:normalize}=load('detector-models')
 test('scripted walkthrough exercises live decision rules',()=>{
  assert.equal(DEMO_STEPS.map((_,i)=>demoState(i).phase).join(','),'observing,verifying,obstructed,unknown,checking-clear,checking-clear,observing')
+})
+test('three demo cases distinguish placement, removal and connection loss',()=>{
+ assert.equal(DEMO_CASES.length,3)
+ const results=DEMO_CASES.map(c=>c.steps.map((_,i)=>demoState(i,c.steps)))
+ assert.ok(results[0].every(s=>!s.lastKnownObstruction))
+ assert.equal(results[1][2].phase,'obstructed')
+ assert.equal(results[1].at(-1).phase,'observing')
+ assert.equal(results[1].at(-1).lastKnownObstruction,false)
+ assert.equal(results[2].at(-1).phase,'unknown')
+ assert.equal(results[2].at(-1).lastKnownObstruction,true)
 })
 test('disconnect preserves unresolved obstruction in the demonstration',()=>{
  assert.equal(demoState(3).lastKnownObstruction,true)
@@ -23,4 +33,3 @@ test('Grounding DINO aliases normalize only explicit parcel phrases',()=>{
  assert.equal(normalize('a doormat'),'a doormat')
  assert.equal(normalize('a person cardboard box'),'a person cardboard box')
 })
-
