@@ -66,12 +66,13 @@ export default function Dashboard() {
           <p className="cd-eyebrow">MY DOORWAY</p>
           <h1>A clear view of your entrance.</h1>
           <p>Watch your camera and check for changes near the door.</p>
+          <a className="cd-button mt-4" href="/phone">Use phone camera instead</a>
         </section>
 
         {loading ? <section className="cd-empty-state" role="status"><h2>Finding your camera…</h2><p>This should only take a moment.</p></section> : setupError ? <section className="cd-empty-state">
           <span className="cd-empty-icon" aria-hidden="true">⌂</span>
           <h2>Your camera isn’t connected yet.</h2>
-          <p>You can explore ClearDrop with a short demo. No camera or sign-in needed.</p>
+          <p>Use your phone camera to test real doorway changes, or explore the illustrated demo.</p>
           <a className="cd-button cd-primary" href="/demo">Try the demo</a>
           <details className="cd-details cd-setup"><summary>Connect a Ring camera</summary>
             <p>This preview needs a Ring connection configured by the person running the app.</p>
@@ -107,4 +108,3 @@ export default function Dashboard() {
     </main>
   </>
 }
-

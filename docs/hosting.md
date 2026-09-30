@@ -13,7 +13,7 @@ Set these service variables privately in Railway:
 
 Use the generated HTTPS domain. Sign in with username `cleardrop` and the preview password. Anyone given this password can access the configured camera; share it only with trusted reviewers. Rotate it after sharing.
 
-Only `/api/health` is unauthenticated. All pages and Ring routes require the preview password, and Ring routes independently enforce access checks. Inherited webhook routes are disabled in hosted mode. Missing or short passwords fail closed. No Ring token is copied into the image or sent to the browser.
+Only `/api/health`, the install manifest and app icon are unauthenticated. All pages and Ring routes require the preview password, and Ring routes independently enforce access checks. Inherited webhook routes are disabled in hosted mode. Missing or short passwords fail closed. No Ring token is copied into the image or sent to the browser.
 
 The local `pnpm dev` and `pnpm start` commands remain loopback-only. `pnpm start:hosted` binds externally with the preview gate enabled. Railway runs the standalone server from the Docker image with the same gate.
 

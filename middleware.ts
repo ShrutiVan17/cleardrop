@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hostedPreview, previewAccess } from './lib/preview-access'
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/api/health') return NextResponse.next()
+  if (['/api/health', '/manifest.webmanifest', '/icon.svg'].includes(request.nextUrl.pathname)) return NextResponse.next()
   const denied = await previewAccess(request)
   if (denied) return denied
   const response = NextResponse.next()

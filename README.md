@@ -28,6 +28,7 @@ The demo is a labelled simulation, not proof of AI recognition or actual Ring pl
 Never commit the token. Renew it when it expires. For replay testing, clips and frames stay on your device.
 
 ## Features
+- Phone camera testing at `/phone`: real rear-camera input, the same doorway checks, no Ring token. Supports home-screen launch; keep the page visible. Frames stay on that device, with no remote viewing or background monitoring. Phone testing does not validate Ring pairing or model accuracy.
 - Ring device discovery and WHEP/WebRTC streaming with received-frame diagnostics.
 - Doorway-zone editing, local calibrated scene-change detection, persistence and human confirmation.
 - Optional experimental parcel AI in a Web Worker.

@@ -3,7 +3,10 @@ import './globals.css'
 export const metadata = {
   title: 'ClearDrop — Doorway Watch',
   description: 'Ring video with local doorway-zone obstruction monitoring',
+  appleWebApp: { capable: true, title: 'ClearDrop', statusBarStyle: 'default' },
 }
+
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#126b58' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,4 +18,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   )
 }
-

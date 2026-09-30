@@ -19,6 +19,15 @@ function load(relative){
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,context)
   return exports
 }
+test('phone mode is isolated from Ring and explicit about limits',()=>{
+  const {default:Phone}=load('app/phone/page.tsx')
+  const html=render(React.createElement(Phone))
+  assert.match(html,/Start phone camera/);assert.match(html,/No Ring device or Ring token needed/);assert.match(html,/not a remote camera feed/)
+  assert.equal((html.split('<details')[0].match(/<button /g)||[]).length,1)
+  const source=fs.readFileSync(path.join(root,'app/phone/page.tsx'),'utf8')
+  assert.doesNotMatch(source,/\/api\/ring/);assert.match(source,/visibilitychange/)
+})
+
 test('main navigation offers only doorway and demo',()=>{
   const {AppNavigation}=load('app/components/AppNavigation.tsx')
   const html=render(React.createElement(AppNavigation,{active:'demo'}))
@@ -52,4 +61,3 @@ test('primary and secondary text colors meet normal-text contrast',()=>{
     assert.ok((values[0]+.05)/(values[1]+.05)>=4.5,`${foreground} on ${background}`)
   }
 })
-
