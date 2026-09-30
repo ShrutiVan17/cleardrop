@@ -41,6 +41,7 @@ test('cross-site writes are blocked and same-origin writes allowed', async () =>
     assert.equal((await check(request({method:'POST',headers}))).status,403)
   }
   assert.equal(await check(request({method:'POST',headers:{authorization,origin:'https://preview.example'}})),null)
+  assert.equal(await check(new Request('http://localhost:3000/api/ring/stream', {method:'POST',headers:{authorization,host:'preview.example',origin:'https://preview.example'}})),null)
 })
 test('every Ring API handler checks access independently of middleware', () => {
   for (const name of ['config','devices','token','stream','events']) {

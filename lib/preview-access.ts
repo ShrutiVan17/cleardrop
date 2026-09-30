@@ -29,7 +29,9 @@ export async function previewAccess(request: Request): Promise<Response | null> 
   if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
     const origin = request.headers.get('origin')
     let sameOrigin = true
-    try { if (origin) sameOrigin = new URL(origin).host === new URL(request.url).host } catch { sameOrigin = false }
+    // Next.js may use the internal bind hostname in request.url behind a proxy.
+    const requestHost = request.headers.get('host') || new URL(request.url).host
+    try { if (origin) sameOrigin = new URL(origin).host === requestHost } catch { sameOrigin = false }
     if (!sameOrigin || request.headers.get('sec-fetch-site') === 'cross-site') {
       return new Response('Cross-site request blocked.', { status: 403, headers })
     }
