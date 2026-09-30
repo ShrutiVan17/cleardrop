@@ -8,10 +8,12 @@ Set these service variables privately in Railway:
 
 - `CLEARDROP_HOSTED=1`
 - `CLEARDROP_PREVIEW_PASSWORD`: a randomly generated password of at least 24 characters.
+- `CLEARDROP_PREVIEW_USERNAME`: optional login name (defaults to `cleardrop`).
+- `CLEARDROP_ALLOW_SHORT_PASSWORD=1`: optional owner override allowing passwords of at least 8 characters. Short, predictable passwords are unsafe for camera access; a strong random password is recommended.
 - `RING_ACCESS_TOKEN`: your current Ring Playground token.
 - `PORT=3000`
 
-Use the generated HTTPS domain. Sign in with username `cleardrop` and the preview password. Anyone given this password can access the configured camera; share it only with trusted reviewers. Rotate it after sharing.
+Use the generated HTTPS domain. Sign in with the configured username (default `cleardrop`) and preview password. Anyone given this password can access the configured camera; share it only with trusted reviewers. Rotate it after sharing.
 
 Only `/api/health`, the install manifest and app icon are unauthenticated. All pages and Ring routes require the preview password, and Ring routes independently enforce access checks. Inherited webhook routes are disabled in hosted mode. Missing or short passwords fail closed. No Ring token is copied into the image or sent to the browser.
 

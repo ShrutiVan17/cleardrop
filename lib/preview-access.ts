@@ -6,8 +6,10 @@ export function hostedPreview(): boolean {
 export async function previewAccess(request: Request): Promise<Response | null> {
   if (!hostedPreview()) return null
   const password = process.env.CLEARDROP_PREVIEW_PASSWORD
+  const username = process.env.CLEARDROP_PREVIEW_USERNAME || 'cleardrop'
+  const minimumLength = process.env.CLEARDROP_ALLOW_SHORT_PASSWORD === '1' ? 8 : 24
   const headers = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' }
-  if (!password || password.length < 24) {
+  if (!password || password.length < minimumLength || !/^[A-Za-z0-9._-]+$/.test(username)) {
     return new Response('Private preview is not configured.', { status: 503, headers })
   }
   const header = request.headers.get('authorization') || ''
@@ -15,7 +17,7 @@ export async function previewAccess(request: Request): Promise<Response | null> 
   try {
     if (/^Basic /i.test(header) && header.length < 2048) supplied = atob(header.slice(6))
   } catch { /* Invalid credentials receive the same challenge. */ }
-  const expected = `cleardrop:${password}`
+  const expected = `${username}:${password}`
   const encoder = new TextEncoder()
   const [a, b] = await Promise.all([supplied, expected].map(value => crypto.subtle.digest('SHA-256', encoder.encode(value))))
   const aa = new Uint8Array(a), bb = new Uint8Array(b)

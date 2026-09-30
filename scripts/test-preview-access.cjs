@@ -18,6 +18,15 @@ function request(extra = {}) {
 }
 const authorization = 'Basic ' + Buffer.from(`cleardrop:${password}`).toString('base64')
 test('local workflow is unchanged', async () => assert.equal(await gate({})(request()), null))
+test('custom login and shorter passwords require explicit owner configuration', async () => {
+  const env = {CLEARDROP_HOSTED:'1', CLEARDROP_PREVIEW_USERNAME:'test-owner', CLEARDROP_PREVIEW_PASSWORD:'fixture8'}
+  const authorization = 'Basic ' + Buffer.from('test-owner:fixture8').toString('base64')
+  assert.equal((await gate(env)(request({headers:{authorization}}))).status,503)
+  const check = gate({...env,CLEARDROP_ALLOW_SHORT_PASSWORD:'1'})
+  assert.equal(await check(request({headers:{authorization}})),null)
+  assert.equal((await check(request({headers:{authorization:'Basic '+Buffer.from('cleardrop:fixture8').toString('base64')}}))).status,401)
+  assert.equal((await gate({...env,CLEARDROP_ALLOW_SHORT_PASSWORD:'1',CLEARDROP_PREVIEW_PASSWORD:'short'})(request())).status,503)
+})
 test('hosted preview fails closed without a strong password', async () => {
   for (const env of [{CLEARDROP_HOSTED:'1'}, {RAILWAY_ENVIRONMENT_ID:'test'}, {CLEARDROP_HOSTED:'1',CLEARDROP_PREVIEW_PASSWORD:'short'}]) {
     assert.equal((await gate(env)(request())).status, 503)
