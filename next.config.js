@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // Standalone output is for the Linux container; Windows need not create symlinks.
+  output: process.platform === 'win32' ? undefined : 'standalone',
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -15,3 +16,4 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+
