@@ -1,3 +1,4 @@
+import { previewAccess } from '@/lib/preview-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken, RingTokenExpiredError } from '@/lib/auth'
 
@@ -14,6 +15,8 @@ function trustedSessionUrl(value: unknown): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   try {
     const { sdpOffer, deviceId } = await request.json()
 
@@ -66,6 +69,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   try {
     const body = await request.json()
     const sessionUrl = trustedSessionUrl(body.sessionUrl)

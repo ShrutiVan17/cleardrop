@@ -1,3 +1,4 @@
+import { previewAccess } from '@/lib/preview-access'
 import { NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/auth'
 
@@ -5,7 +6,9 @@ const DEVICE_ID = process.env.NEXT_PUBLIC_RING_DEVICE_ID
 const DEVICE_NAME = process.env.NEXT_PUBLIC_RING_DEVICE_NAME || 'Camera'
 const API_BASE = 'https://api.amazonvision.com'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   try {
     const token = await getAccessToken()
 

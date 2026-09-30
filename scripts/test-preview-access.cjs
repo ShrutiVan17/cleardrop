@@ -1,0 +1,57 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const vm = require('node:vm')
+const ts = require('typescript')
+const root = path.join(__dirname, '..')
+const source = fs.readFileSync(path.join(root, 'lib/preview-access.ts'), 'utf8')
+const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+function gate(env) {
+  const exports = {}
+  vm.runInNewContext(code, { exports, process: { env }, crypto: require('node:crypto').webcrypto, TextEncoder, Response, URL, atob })
+  return exports.previewAccess
+}
+const password = 'test-only-password-at-least-24-characters'
+function request(extra = {}) {
+  return new Request('https://preview.example/api/ring/stream', extra)
+}
+const authorization = 'Basic ' + Buffer.from(`cleardrop:${password}`).toString('base64')
+test('local workflow is unchanged', async () => assert.equal(await gate({})(request()), null))
+test('hosted preview fails closed without a strong password', async () => {
+  for (const env of [{CLEARDROP_HOSTED:'1'}, {RAILWAY_ENVIRONMENT_ID:'test'}, {CLEARDROP_HOSTED:'1',CLEARDROP_PREVIEW_PASSWORD:'short'}]) {
+    assert.equal((await gate(env)(request())).status, 503)
+  }
+})
+test('missing, incorrect and malformed credentials are rejected', async () => {
+  const check = gate({CLEARDROP_HOSTED:'1',CLEARDROP_PREVIEW_PASSWORD:password})
+  for (const value of ['', 'Basic !!!', 'Basic '+Buffer.from('cleardrop:wrong').toString('base64')]) {
+    const result = await check(request({headers:{authorization:value}}))
+    assert.equal(result.status, 401)
+    assert.match(result.headers.get('www-authenticate'), /^Basic/)
+    assert.equal(result.headers.get('cache-control'), 'private, no-store')
+  }
+})
+test('correct credentials allow access on Railway', async () => {
+  assert.equal(await gate({RAILWAY_ENVIRONMENT_ID:'test',CLEARDROP_PREVIEW_PASSWORD:password})(request({headers:{authorization}})), null)
+})
+test('cross-site writes are blocked and same-origin writes allowed', async () => {
+  const check = gate({CLEARDROP_HOSTED:'1',CLEARDROP_PREVIEW_PASSWORD:password})
+  for (const headers of [{authorization,origin:'https://attacker.example'},{authorization,'sec-fetch-site':'cross-site'}]) {
+    assert.equal((await check(request({method:'POST',headers}))).status,403)
+  }
+  assert.equal(await check(request({method:'POST',headers:{authorization,origin:'https://preview.example'}})),null)
+})
+test('every Ring API handler checks access independently of middleware', () => {
+  for (const name of ['config','devices','token','stream','events']) {
+    const content=fs.readFileSync(path.join(root,`app/api/ring/${name}/route.ts`),'utf8')
+    const handlers=content.match(/export async function (GET|POST|DELETE)/g)||[]
+    assert.ok(handlers.length>0)
+    assert.equal((content.match(/const denied = await previewAccess\(request\)/g)||[]).length,handlers.length)
+  }
+  for (const name of ['webhook','webhook/test']) {
+    const content=fs.readFileSync(path.join(root,`app/api/${name}/route.ts`),'utf8')
+    const handlers=content.match(/export async function (GET|POST)/g)||[]
+    assert.equal((content.match(/if \(hostedPreview\(\)\)/g)||[]).length,handlers.length)
+  }
+})

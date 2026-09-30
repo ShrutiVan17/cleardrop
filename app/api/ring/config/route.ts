@@ -1,7 +1,10 @@
+import { previewAccess } from '@/lib/preview-access'
 import { NextResponse } from 'next/server'
 import { getAuthMode, getAccessTokenExpiry, RingTokenExpiredError } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   const mode = getAuthMode()
 
   if (mode === null && process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {

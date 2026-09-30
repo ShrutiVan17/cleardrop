@@ -1,3 +1,4 @@
+import { hostedPreview } from '@/lib/preview-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { broadcastEvent } from '@/lib/sse-broadcast'
 
@@ -10,6 +11,7 @@ import { broadcastEvent } from '@/lib/sse-broadcast'
  *   POST /api/webhook/test?type=device_added
  */
 export async function POST(request: NextRequest) {
+  if (hostedPreview()) return new Response('Not available in hosted preview.', { status: 404 })
   const eventType = request.nextUrl.searchParams.get('type') || 'motion_detected'
   const deviceId = process.env.NEXT_PUBLIC_RING_DEVICE_ID || 'test-device-123'
   
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
 
 // GET - simple info about the test endpoint
 export async function GET() {
+  if (hostedPreview()) return new Response('Not available in hosted preview.', { status: 404 })
   return NextResponse.json({
     description: 'Test endpoint to simulate Ring webhook events',
     usage: {

@@ -1,3 +1,4 @@
+import { previewAccess } from '@/lib/preview-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { eventStore } from '@/lib/sse-broadcast'
 
@@ -9,6 +10,8 @@ import { eventStore } from '@/lib/sse-broadcast'
  * This endpoint returns events that have been received via webhook (or simulated via /api/webhook/test).
  */
 export async function GET(request: NextRequest) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   // Return events from the webhook event store
   // These are populated by:
   // 1. Real Ring webhooks POSTed to /api/webhook

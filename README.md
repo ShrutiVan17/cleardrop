@@ -40,7 +40,7 @@ This is an experimental prototype, **not a safety system**. Scene change is not 
 
 No remote caregiver notifications, background monitoring after closing the page, or production multi-user authentication are implemented. Activity and captured clips are memory-only; zone coordinates use local storage. Model weights/runtime files are downloaded when enabled; frames are not sent to a recognition service.
 
-The app binds to **127.0.0.1**. Do not expose its Ring routes publicly with your credentials. Production requires authenticated users, account-scoped authorization, webhook hardening, rate limits and retention controls. The inherited refresh-token/webhook workflow has not been validated end-to-end for this release.
+Local commands bind to **127.0.0.1**. The optional [Railway preview](docs/hosting.md) requires a private access password and disables inherited webhooks. It is a single-owner preview, not production multi-user authentication. Production requires account-scoped authorization, rate limits and retention controls. The inherited refresh-token workflow has not been validated end-to-end for this release.
 
 GitHub Pages does not run the Next.js server or its Ring API routes. A successful Pages/Jekyll build is not a deployment of this application.
 
@@ -52,7 +52,7 @@ pnpm build
 pnpm start
 ```
 
-Thirty-four deterministic tests cover geometry, persistence, stale observations, evaluation reports, demo behavior, basic interface structure and selected text-color contrast pairs. The production build passed. These tests do not establish real-world model accuracy or replace accessibility user testing.
+Deterministic tests cover geometry, persistence, stale observations, evaluation reports, demo behavior, basic interface structure, selected text-color contrast pairs and hosted-preview access controls. These tests do not establish real-world model accuracy or replace accessibility user testing.
 
 Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original checkout is inherited from the starter.
 
@@ -67,4 +67,3 @@ The illustrated demo is separate from actual Ring playback.
 
 ## Attribution
 Built on [AmazonAppDev/ring-api-helloworld](https://github.com/AmazonAppDev/ring-api-helloworld). Original Amazon copyright and [MIT license](LICENSE) retained. ClearDrop adds the doorway workflow, decision policies, replay evaluation, stream-health improvements and demo UI. See [third-party notices](docs/third-party-notices.md) for model and footage attribution.
-

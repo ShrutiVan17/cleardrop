@@ -1,3 +1,4 @@
+import { hostedPreview } from '@/lib/preview-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { broadcastEvent, eventStore, addClient, removeClient } from '@/lib/sse-broadcast'
 import { parseRingWebhook } from '@/lib/schemas/webhook'
@@ -46,6 +47,7 @@ function normalizeGenericEvent(body: any) {
 }
 
 export async function POST(request: NextRequest) {
+  if (hostedPreview()) return new Response('Not available in hosted preview.', { status: 404 })
   try {
     const authHeader = request.headers.get('Authorization')
     const expectedToken = process.env.RING_WEBHOOK_SECRET
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  if (hostedPreview()) return new Response('Not available in hosted preview.', { status: 404 })
   const encoder = new TextEncoder()
   let client: ReadableStreamDefaultController | null = null
   let keepAlive: ReturnType<typeof setInterval> | null = null

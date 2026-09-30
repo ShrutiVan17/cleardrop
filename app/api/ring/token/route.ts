@@ -1,7 +1,10 @@
+import { previewAccess } from '@/lib/preview-access'
 import { NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await previewAccess(request)
+  if (denied) return denied
   try {
     await getAccessToken()
     return NextResponse.json({ configured: true })
