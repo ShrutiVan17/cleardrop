@@ -31,7 +31,7 @@ self.onmessage = async ({data}) => {
       // One RawImage produces a flat result; the library type also permits image batches.
       const raw = await detector(image, prompts, {threshold:DETECTOR_MODELS[modelKey].threshold, percentage:true, top_k:15}) as Detection[]
       const results = modelKey==='grounding' ? raw.map(d=>({...d,rawLabel:d.label,label:normalizeGroundedLabel(d.label)})) : raw
-      self.postMessage({type:'result', results, id:data.id, capturedAt:data.capturedAt})
+      self.postMessage({type:'result', results, id:data.id, capturedAt:data.capturedAt, mediaTime:data.mediaTime})
     }
   } catch(e) {
     self.postMessage({type:'error', message:e instanceof Error ? e.message : 'Package model failed'})

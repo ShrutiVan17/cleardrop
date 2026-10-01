@@ -167,6 +167,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
           {(packages.status==='off'||packages.status==='error') ? <button className="cd-button" onClick={packages.enable}>Load experimental model</button> : <button className="cd-button" onClick={packages.disable}>{packages.status==='loading'?'Cancel download':'Turn off model'}</button>}
         </div>
         <p className="cd-help" role="status">{packages.message} · {packages.scans} scans{packages.latency!==null ? ` · last scan ${(packages.latency/1000).toFixed(1)}s` : ''}</p>
+        {packages.receipt && <div className="mt-3"><p className="cd-help">Download the last actual model observation, its timestamp and current review status. This contains no video or credentials.</p><button className="cd-button" onClick={packages.exportReceipt}>Download AI observation</button></div>}
         {entries.length > 0 && <div className="mt-5"><div className="flex justify-between items-center"><h3 className="font-semibold">Recent activity</h3><button className="cd-button" onClick={() => setEntries([])}>Clear list</button></div><ol className="space-y-3 mt-3 max-h-48 overflow-auto">{entries.map(entry => <li key={entry.id} className="text-sm"><div className="flex justify-between gap-3"><strong className="font-medium">{entry.kind}</strong><time>{entry.time}</time></div><p className="cd-help">{entry.detail}</p></li>)}</ol></div>}
       </details>
     </section>
