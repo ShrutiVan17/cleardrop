@@ -4,7 +4,11 @@ Record only what actually runs. Hide tokens and personal account details. Rehear
 
 ## Before recording
 
-Start the verified app locally. Open `/demo` and `/` in separate tabs. Refresh the Ring playground token privately in `.env.local`; restart the server. Confirm a real sandbox session plays. Select the scenario deliberately. If the sandbox footage's rights are unclear, resolve them before publishing or use permissioned footage. Attribution for the previously tested Package clip is in `third-party-notices.md`.
+Start the verified app locally. Use `/test` for a full automatic camera-processing check: Start test video, save the empty reference, then Run all three tests. Generated video is decoded by the browser and sampled by the same production monitoring component used for phone and Ring inputs. It is not real Ring footage or a semantic parcel-accuracy test.
+
+For Ring, use the masked Connect Ring preview form on `/` with a fresh token. No environment edit/redeployment is needed. Confirm moving video and arriving frames. For physical input, use `/phone` on HTTPS and move a real box. Do not label either connection as verified unless that session actually runs. If footage rights are unclear, resolve them before publishing. Attribution for the previously tested Package clip is in `third-party-notices.md`.
+
+The matching motivating incident is Dominga G. Soto's April 24, 2021 slip on a hard cylindrical doorstep package delivered by USPS. The January 4, 2024 court findings discuss L1/L2 compression fractures, including the treatment-related sequence. Do not call this an Amazon delivery or say ClearDrop would have prevented it. Source: https://www.casemine.com/judgement/us/659b7a6eaf1d365f88db7008 (court findings reproduced).
 
 ## 0:00–0:20 — the problem
 
@@ -31,4 +35,3 @@ Open Test a clip. Show upload, model selection and report controls without prete
 Return to the simulation's final state. Say: “ClearDrop is a local-first review workflow with explicit uncertainty, backed by tested geometry and state rules. Next: representative clip evaluation and feedback from people with mobility needs. This is an experimental prototype, not a safety system.”
 
 Keep real Ring footage and illustrated examples clearly labelled when sharing a demonstration.
-

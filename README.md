@@ -16,6 +16,8 @@ Open http://127.0.0.1:3000 and choose:
 - **My doorway** — real camera or Ring sandbox video. Requires a Ring token.
 - **Try a demo** — three labelled scenarios: a parcel beside the zone, a blocked zone followed by removal, and lost video during an alert. Scripted observations exercise the decision rules; no token needed.
 
+For actual video processing, open `/test`: **Start test video → Area is empty — start watching → Run all three tests**. A generated moving video is decoded and sampled by the production monitoring component. Results are measured from pixels and real elapsed time, not preset pass badges. This verifies the camera-processing path, not physical Ring playback or semantic recognition. Use `/phone` with a real box for a physical-camera check.
+
 Clip testing is available under **Testing & connection details**. Experimental recognition stays under **More options**, outside the main workflow.
 
 The demo is a labelled simulation, not proof of AI recognition or actual Ring playback.
@@ -43,6 +45,8 @@ No remote caregiver notifications, background monitoring after closing the page,
 
 Local commands bind to **127.0.0.1**. The optional [Railway preview](docs/hosting.md) requires a private access password and disables inherited webhooks. It is a single-owner preview, not production multi-user authentication. Production requires account-scoped authorization, rate limits and retention controls. The inherited refresh-token workflow has not been validated end-to-end for this release.
 
+An optional [email-account foundation](docs/account-security.md) adds sign-up, verification, sign-in/out, recovery and account deletion through Supabase. It is disabled until the owner configures a project. `/account` clearly reports setup status; it does not simulate successful authentication. This version is not an App Store/Play Store release or a security-certified product.
+
 GitHub Pages does not run the Next.js server or its Ring API routes. A successful Pages/Jekyll build is not a deployment of this application.
 
 ## Verify
@@ -62,6 +66,7 @@ Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original
 - [Architecture and security boundaries](docs/architecture.md)
 - [Detailed instructions](docs/cleardrop.md)
 - [Verification record](docs/release-checks.md)
+- [Account setup and security release boundaries](docs/account-security.md)
 - [Developer friction log](docs/friction-log.md)
 
 The illustrated demo is separate from actual Ring playback.

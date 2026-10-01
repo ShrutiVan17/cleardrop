@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 
 export const RING_COOKIE = 'cleardrop_ring_session'
-type Session = { token: string; expiresAt: number }
+type Session = { token: string; expiresAt: number; ownerId?: string }
 // Single-replica preview storage. Tokens are never written to disk or returned to the browser.
 const shared = globalThis as typeof globalThis & { clearDropRingSessions?: Map<string, Session> }
 const sessions = shared.clearDropRingSessions || (shared.clearDropRingSessions = new Map())
@@ -15,15 +15,16 @@ function sessionId(request?: Request) {
   return request?.headers.get('cookie')?.split(';').map(x => x.trim()).find(x => x.startsWith(`${RING_COOKIE}=`))?.slice(RING_COOKIE.length + 1)
 }
 function prune() { sessions.forEach((value, id) => { if (value.expiresAt <= Date.now()) sessions.delete(id) }) }
-export function sessionToken(request?: Request): string | null {
+export function sessionToken(request?: Request, ownerId?: string): string | null {
   const id = sessionId(request)
   if (!id) return null
   prune()
   const session = sessions.get(id)
   if (!session) throw new Error('Your Ring preview session ended. Connect again with a fresh token.')
+  if (ownerId && session.ownerId !== ownerId) throw new Error('Connect Ring for your own account.')
   return session.token
 }
-export function saveRingSession(token: string, request: Request) {
+export function saveRingSession(token: string, request: Request, ownerId?: string) {
   prune()
   const expiry = tokenExpiry(token)
   if (!expiry || expiry <= Date.now()) throw new Error('This token has expired or is incomplete. Generate a fresh Ring Playground token.')
@@ -31,7 +32,7 @@ export function saveRingSession(token: string, request: Request) {
   if (sessions.size >= 64 && (!old || !sessions.has(old))) throw new Error('Too many preview connections. Try again later.')
   const id = randomBytes(32).toString('hex')
   const expiresAt = Math.min(expiry, Date.now() + 4 * 60 * 60 * 1000)
-  sessions.set(id, { token, expiresAt })
+  sessions.set(id, { token, expiresAt, ownerId })
   if (old) sessions.delete(old)
   return { id, expiresAt }
 }

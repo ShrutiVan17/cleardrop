@@ -16,7 +16,7 @@ export class RingTokenExpiredError extends Error {
 
 // Read expiry only for UI/preflight checks; Ring still validates the token.
 export function getAccessTokenExpiry(request?: Request): number | null {
-  const token = sessionToken(request) || process.env.RING_ACCESS_TOKEN
+  const token = sessionToken(request) || (process.env.CLEARDROP_ACCOUNT_AUTH === '1' ? undefined : process.env.RING_ACCESS_TOKEN)
   if (!token) return null
   try {
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'))
@@ -26,6 +26,7 @@ export function getAccessTokenExpiry(request?: Request): number | null {
 
 export function getAuthMode(request?: Request): AuthMode | null {
   if (sessionToken(request)) return 'access_token'
+  if (process.env.CLEARDROP_ACCOUNT_AUTH === '1') return null
   if (process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     return null // conflict
   }
@@ -35,8 +36,17 @@ export function getAuthMode(request?: Request): AuthMode | null {
 }
 
 export async function getAccessToken(request?: Request): Promise<string> {
-  const browserToken = sessionToken(request)
+  let ownerId: string | undefined
+  if (process.env.CLEARDROP_ACCOUNT_AUTH === '1') {
+    const { accountUser } = await import('./account-auth')
+    if (!request) throw new Error('Sign in to connect Ring.')
+    const user = await accountUser(request)
+    if (!user) throw new Error('Sign in to connect Ring.')
+    ownerId = user.id
+  }
+  const browserToken = sessionToken(request, ownerId)
   if (browserToken) return browserToken
+  if (ownerId) throw new Error('Connect Ring for your own account.')
   // Conflict check
   if (process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     throw new Error(
@@ -77,8 +87,7 @@ export async function getAccessToken(request?: Request): Promise<string> {
     })
 
     if (!res.ok) {
-      const error = await res.text()
-      throw new Error(`Token refresh failed: ${error}`)
+      throw new Error('Ring token renewal failed. Reconnect your Ring account.')
     }
 
     const data = await res.json()

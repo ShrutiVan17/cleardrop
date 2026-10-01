@@ -26,7 +26,14 @@ export async function POST(request: Request) {
     if (!ring.ok) return NextResponse.json({ error: ring.status === 401 || ring.status === 403 ? 'Ring rejected this token. Generate a new Ring Playground token and try again.' : 'Ring is unavailable. Please try again shortly.' }, { status: ring.status === 401 || ring.status === 403 ? 400 : 502 })
     const data = await ring.json()
     if (!Array.isArray(data.data) || !data.data.length) return NextResponse.json({ error: 'Ring accepted the token, but shared no cameras. Select a camera in the Ring developer setup.' }, { status: 400 })
-    const session = saveRingSession(token, request)
+    let ownerId: string | undefined
+    if (process.env.CLEARDROP_ACCOUNT_AUTH === '1') {
+      const { accountUser } = await import('@/lib/account-auth')
+      const user = await accountUser(request)
+      if (!user) return NextResponse.json({ error: 'Sign in to connect Ring.' }, { status: 401 })
+      ownerId = user.id
+    }
+    const session = saveRingSession(token, request, ownerId)
     const response = NextResponse.json({ connected: true, cameraCount: data.data.length, expiresAt: session.expiresAt }, { headers: { 'Cache-Control': 'no-store' } })
     response.cookies.set(RING_COOKIE, session.id, { httpOnly: true, secure: hostedPreview() || new URL(request.url).protocol === 'https:', sameSite: 'strict', path: '/api/ring', maxAge: 14400 })
     return response

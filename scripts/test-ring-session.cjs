@@ -48,3 +48,9 @@ test('sessions isolate browsers; disconnect never falls back to server credentia
  await assert.rejects(f.auth.getAccessToken(read),/session ended/)
  assert.equal(f.session.sessionToken(new Request('https://preview.example/api/ring/config',{headers:{cookie:f.session.RING_COOKIE+'='+second.id}})),otherToken)
 })
+test('a Ring token bound to an account cannot be used by another account',()=>{
+ const f=setup(),saved=f.session.saveRingSession(token(),request(''),'owner-a')
+ const read=new Request('https://preview.example/api/ring/config',{headers:{cookie:f.session.RING_COOKIE+'='+saved.id}})
+ assert.equal(f.session.sessionToken(read,'owner-a'),token())
+ assert.throws(()=>f.session.sessionToken(read,'owner-b'),/own account/)
+})

@@ -2,13 +2,14 @@
 
 import { RefObject, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { advanceDetection, compareZone, emptyPersistence, validZone, Zone } from '@/lib/obstruction'
+import { validZone, Zone } from '@/lib/obstruction'
+import { ChangeMonitor, ChangeObservation } from '@/lib/change-monitor'
 import { usePackageDetection } from '../hooks/usePackageDetection'
 
 type Entry = { id: number; time: string; kind: string; detail: string }
 const defaultZone: Zone = { x: .3, y: .5, w: .4, h: .4 }
 
-export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<HTMLVideoElement>; active: boolean; deviceId?: string }) {
+export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation }: { videoRef: RefObject<HTMLVideoElement>; active: boolean; deviceId?: string; fixedZone?: Zone; onObservation?: (observation: ChangeObservation) => void }) {
   const [zone, setZone] = useState<Zone>(defaultZone)
   const [editing, setEditing] = useState(false)
   const [ready, setReady] = useState(false)
@@ -19,8 +20,10 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
   const [error, setError] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [fit, setFit] = useState({ left: 0, top: 0, width: 0, height: 0 })
-  const baseline = useRef<ImageData | null>(null)
-  const persistence = useRef(emptyPersistence())
+  const monitor = useRef(new ChangeMonitor())
+  const lastFrameAt = useRef(0)
+  const observationCallback = useRef(onObservation)
+  observationCallback.current = onObservation
   const lastTime = useRef(-1)
   const drag = useRef<{x: number; y: number} | null>(null)
   const overlay = useRef<HTMLDivElement>(null)
@@ -35,19 +38,21 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     setEntries(items => [{ id: ++seq.current, time: new Date().toLocaleTimeString(), kind, detail }, ...items].slice(0, 20))
   }
   function reset() {
-    baseline.current = null; persistence.current = emptyPersistence(); lastTime.current = -1
+    monitor.current.pause(); lastTime.current = -1
     setReady(false); setRatio(0); setBlocked(false); setConfirmed(false); setError('')
   }
   useEffect(() => {
+    monitor.current = new ChangeMonitor()
     reset()
     setEntries([])
     setUnresolved(false)
     try {
       const value = JSON.parse(localStorage.getItem(`cleardrop.zone.${deviceId || 'default'}`) || 'null')
-      setZone(validZone(value) ? value : defaultZone)
-    } catch { setZone(defaultZone) }
+      setZone(fixedZone || (validZone(value) ? value : defaultZone))
+    } catch { setZone(fixedZone || defaultZone) }
   }, [deviceId])
   useEffect(() => { if (!active) { reset(); setEditing(false) } }, [active])
+  useEffect(() => { observationCallback.current?.(monitor.current.snapshot()) }, [active, ready, blocked, unresolved])
 
   useEffect(() => {
     const video = videoRef.current
@@ -77,7 +82,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
   function calibrate() {
     try {
       if (!validZone(zone)) throw new Error('Mark a doorway area inside the video first.')
-      baseline.current = capture(); persistence.current = emptyPersistence()
+      monitor.current.calibrate(capture(), zone, performance.now()); lastFrameAt.current = performance.now()
       setReady(true); setBlocked(false); setUnresolved(false); setConfirmed(false); setError(''); setRatio(0)
       log('Reference saved', 'Current frame marked as an empty doorway. Monitoring started.')
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not capture reference') }
@@ -87,22 +92,31 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
     if (!active || !ready || editing) return
     const timer = setInterval(() => {
       const video = videoRef.current
-      if (!video || video.paused || video.currentTime === lastTime.current || !baseline.current) return
+      const at = performance.now()
+      if (!video || video.paused || video.currentTime === lastTime.current) {
+        if (at - lastFrameAt.current > 1500) {
+          monitor.current.pause(); setReady(false); setBlocked(false)
+          setError('Video is not updating. Check the camera, then save a new empty reference.')
+        }
+        return
+      }
+      lastFrameAt.current = at
       lastTime.current = video.currentTime
       try {
-        const score = compareZone(baseline.current, capture(), zone)
-        const previous = persistence.current
-        const next = advanceDetection(previous, score, performance.now())
-        persistence.current = next; setRatio(score); setBlocked(next.active)
-        if (next.active && !previous.active) {
+        const previous = monitor.current.snapshot()
+        const next = monitor.current.observe(capture(), at)
+        observationCallback.current?.(next)
+        setRatio(next.ratio); setBlocked(next.blocked); setUnresolved(next.unresolved)
+        if (!next.ready) { setReady(false); setError('Video was interrupted. Check the area and save a new empty reference.'); return }
+        if (next.blocked && !previous.blocked) {
           setUnresolved(true)
           setConfirmed(false)
           log('Possible obstruction', 'A persistent change appeared inside the doorway zone. Review the video.')
-        } else if (!next.active && previous.active) {
+        } else if (!next.blocked && previous.blocked) {
           setUnresolved(false)
           setConfirmed(false); log('Change cleared', 'The doorway looks similar to the saved reference again.')
         }
-      } catch (e) { setError(e instanceof Error ? e.message : 'Analysis failed'); setReady(false) }
+      } catch (e) { monitor.current.pause(); setBlocked(false); setError(e instanceof Error ? e.message : 'Analysis failed'); setReady(false) }
     }, 250)
     return () => clearInterval(timer)
   }, [active, ready, editing, zone, videoRef])
@@ -135,7 +149,7 @@ export function ClearDrop({ videoRef, active, deviceId }: { videoRef: RefObject<
           setEditing(false)
         }}>Save area</button> : <>
           {!ready && <button className="cd-button cd-primary" onClick={calibrate}>Area is empty — start watching</button>}
-          <button className="cd-button" onClick={() => { reset(); setEditing(true) }}>Change doorway area</button>
+          {!fixedZone && <button className="cd-button" onClick={() => { reset(); setEditing(true) }}>Change doorway area</button>}
         </>}
       </div>}
       {editing && <fieldset className="mt-4"><legend className="text-sm mb-2">Area position (percent of video)</legend><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{(['x','y','w','h'] as const).map(key => <label key={key} className="text-sm">{{x:'Left',y:'Top',w:'Width',h:'Height'}[key]}<input className="cd-input" type="number" min={key==='w'||key==='h'?3:0} max={100} value={Math.round(zone[key]*100)} onChange={e => { const v=Math.max(0,Math.min(1,Number(e.target.value)/100)); setZone(z => { const n={...z,[key]:v}; n.w=Math.min(n.w,1-n.x); n.h=Math.min(n.h,1-n.y); return n }) }} /></label>)}</div></fieldset>}
