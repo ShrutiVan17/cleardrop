@@ -44,7 +44,7 @@ export default function PhonePage() {
 
   return <>
     <Header connected={false} enabledCount={0} simpleMode />
-    <nav aria-label="Camera source" className="cd-navigation"><Link href="/">Ring camera</Link><Link href="/phone" aria-current="page">Phone camera</Link></nav>
+    <nav aria-label="Camera source" className="cd-navigation"><Link href="/">Home</Link><Link href="/phone" aria-current="page">Phone camera</Link></nav>
     <main id="main-content" className="cd-shell" tabIndex={-1}>
       <section className="cd-hero"><p className="cd-eyebrow">TEST WITH YOUR PHONE</p><h1>Your phone is the camera.</h1><p>Try the real doorway checks. No Ring device or Ring token needed.</p></section>
       <section className="cd-camera-card" aria-label="Phone camera">

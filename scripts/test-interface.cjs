@@ -27,6 +27,14 @@ test('phone mode is isolated from Ring and explicit about limits',()=>{
   const source=fs.readFileSync(path.join(root,'app/phone/page.tsx'),'utf8')
   assert.doesNotMatch(source,/\/api\/ring/);assert.match(source,/visibilitychange/)
 })
+test('public home offers token-free demo and phone paths without camera fetching',()=>{
+  const {default:Home}=load('app/page.tsx')
+  const html=render(React.createElement(Home))
+  assert.match(html,/href="\/test"[^>]*>Try the working demo/)
+  assert.match(html,/href="\/phone"[^>]*>Use my phone camera/)
+  assert.match(html,/not live Ring footage/);assert.match(html,/href="\/doorway"/)
+  assert.doesNotMatch(fs.readFileSync(path.join(root,'app/page.tsx'),'utf8'),/fetch\(|RingConnection|useWebRTCStream/)
+})
 test('Ring connection asks only for a masked developer token and discloses hardware limits',()=>{
   const {RingConnection}=load('app/components/RingConnection.tsx')
   const html=render(React.createElement(RingConnection,{onConnected:()=>{}}))

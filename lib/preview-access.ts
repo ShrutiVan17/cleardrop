@@ -1,9 +1,13 @@
+import { publicDemoEnabled } from './public-access'
 /** A single-owner preview gate, not multi-user Ring account authorization. */
 export function hostedPreview(): boolean {
   return process.env.CLEARDROP_HOSTED === '1' || Boolean(process.env.RAILWAY_ENVIRONMENT_ID)
 }
 
 export async function previewAccess(request: Request): Promise<Response | null> {
+  if (publicDemoEnabled() && process.env.CLEARDROP_ACCOUNT_AUTH !== '1') {
+    return Response.json({ error: 'Private camera access is not configured.' }, { status: 503 })
+  }
   const ownerDenied = await ownerPreviewAccess(request)
   if (ownerDenied) return ownerDenied
   if (process.env.CLEARDROP_ACCOUNT_AUTH === '1') {
@@ -13,8 +17,9 @@ export async function previewAccess(request: Request): Promise<Response | null> 
   return null
 }
 
-/** Keep account testing behind the owner gate until public-release controls exist. */
+/** Explicit public-demo deployments replace Basic auth with personal account auth. */
 export async function ownerPreviewAccess(request: Request): Promise<Response | null> {
+  if (publicDemoEnabled()) return null
   if (!hostedPreview()) return null
   const password = process.env.CLEARDROP_PREVIEW_PASSWORD
   const username = process.env.CLEARDROP_PREVIEW_USERNAME || 'cleardrop'

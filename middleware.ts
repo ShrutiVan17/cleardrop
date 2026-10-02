@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hostedPreview, previewAccess, ownerPreviewAccess } from './lib/preview-access'
 import { accountEnabled, accountMiddleware } from './lib/account-auth'
+import { publicDemoEnabled, publicDemoPath } from './lib/public-access'
 
 export async function middleware(request: NextRequest) {
   if (['/api/health', '/manifest.webmanifest', '/icon.svg'].includes(request.nextUrl.pathname)) return NextResponse.next()
+  if (publicDemoEnabled()) {
+    if (publicDemoPath(request.nextUrl.pathname)) return NextResponse.next()
+    if (!accountEnabled()) return NextResponse.json({ error: 'Private camera access is not configured.' }, { status: 503 })
+    return accountMiddleware(request)
+  }
   if (accountEnabled()) {
     const ownerDenied = await ownerPreviewAccess(request)
     if (ownerDenied) return ownerDenied

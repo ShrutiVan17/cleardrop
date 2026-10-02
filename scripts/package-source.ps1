@@ -3,7 +3,7 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $outputDirectory = Join-Path $projectRoot 'dist'
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 $zipPath = Join-Path $outputDirectory ('cleardrop-source-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
-$rootNames = @('package.json','pnpm-lock.yaml','pnpm-workspace.yaml','README.md','LICENSE','.gitignore','.env.example','tsconfig.json','next-env.d.ts','next.config.js','postcss.config.js','tailwind.config.js')
+$rootNames = @('package.json','pnpm-lock.yaml','pnpm-workspace.yaml','README.md','LICENSE','.gitignore','.dockerignore','.env.example','middleware.ts','Dockerfile','railway.json','tsconfig.json','next-env.d.ts','next.config.js','postcss.config.js','tailwind.config.js')
 $sourceFiles = @($rootNames | ForEach-Object { Get-Item -LiteralPath (Join-Path $projectRoot $_) })
 foreach ($directoryName in @('app','lib','scripts','docs','public')) {
   $sourceFiles += Get-ChildItem -LiteralPath (Join-Path $projectRoot $directoryName) -Recurse -File
@@ -31,4 +31,3 @@ try {
 } finally { $check.Dispose() }
 Get-Item -LiteralPath $zipPath | Select-Object FullName,Length
 Get-FileHash -LiteralPath $zipPath -Algorithm SHA256
-

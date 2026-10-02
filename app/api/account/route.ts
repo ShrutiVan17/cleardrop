@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { accountClient, accountConfig, accountEnabled } from '@/lib/account-auth'
 import { readSmallJson, sameSiteWrite, validEmail, validPassword } from '@/lib/account-policy'
 import { ownerPreviewAccess } from '@/lib/preview-access'
+import { publicSignupEnabled } from '@/lib/public-access'
+import { allowAccountAttempt } from '@/lib/account-rate-limit'
 
 export const runtime = 'nodejs'
 const headers = { 'Cache-Control': 'private, no-store' }
@@ -12,7 +14,7 @@ export async function GET(request: Request) {
   if (!accountEnabled()) return NextResponse.json({ configured: false, message: 'Account setup is not activated. This is still the owner preview.' }, { headers })
   try {
     const { data, error } = await accountClient(request).auth.getUser()
-    return NextResponse.json({ configured: true, email: !error && data.user?.email_confirmed_at ? data.user.email : null, deletionAvailable: Boolean(process.env.SUPABASE_SECRET_KEY) }, { headers })
+    return NextResponse.json({ configured: true, email: !error && data.user?.email_confirmed_at ? data.user.email : null, signupAvailable: publicSignupEnabled(), deletionAvailable: Boolean(process.env.SUPABASE_SECRET_KEY) }, { headers })
   } catch { return NextResponse.json({ error: 'Account service is unavailable.' }, { status: 503, headers }) }
 }
 export async function POST(request: Request) {
@@ -30,6 +32,8 @@ export async function POST(request: Request) {
     if (!['signin', 'signup', 'signout', 'reset-request', 'reset-password', 'delete'].includes(action)) return NextResponse.json({ error: 'Invalid account action.' }, { status: 400, headers })
     if (['signin', 'signup', 'reset-request'].includes(action) && !validEmail(email)) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400, headers })
     if (['signin', 'signup', 'reset-password', 'delete'].includes(action) && !validPassword(password)) return NextResponse.json({ error: 'Use a password with 12–128 characters.' }, { status: 400, headers })
+    if (!allowAccountAttempt(`${action}:${email.trim().toLowerCase()}`)) return NextResponse.json({ error: 'Too many account attempts. Wait a minute and try again.' }, { status: 429, headers: { ...headers, 'Retry-After': '60' } })
+    if (action === 'signup' && !publicSignupEnabled()) return NextResponse.json({ error: 'Public registration is not open yet. You can try the demo without an account.' }, { status: 503, headers })
     const response = NextResponse.json({ success: true }, { headers })
     const client = accountClient(request, response)
     const options = typeof captchaToken === 'string' && captchaToken.length < 4096 ? { captchaToken } : undefined

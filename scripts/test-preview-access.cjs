@@ -9,7 +9,7 @@ const source = fs.readFileSync(path.join(root, 'lib/preview-access.ts'), 'utf8')
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
 function gate(env) {
   const exports = {}
-  vm.runInNewContext(code, { exports, process: { env }, crypto: require('node:crypto').webcrypto, TextEncoder, Response, URL, atob })
+  vm.runInNewContext(code, { exports, process: { env }, require(name) { if(name==='./public-access') return { publicDemoEnabled:()=>env.CLEARDROP_PUBLIC_DEMO==='1' }; if(name==='./account-auth') return { accountAccess:async()=>Response.json({error:'Sign in to continue.'},{status:401}) }; throw new Error(name) }, crypto: require('node:crypto').webcrypto, TextEncoder, Response, URL, atob })
   return exports.previewAccess
 }
 const password = 'test-only-password-at-least-24-characters'
@@ -18,6 +18,11 @@ function request(extra = {}) {
 }
 const authorization = 'Basic ' + Buffer.from(`cleardrop:${password}`).toString('base64')
 test('local workflow is unchanged', async () => assert.equal(await gate({})(request()), null))
+test('public deployment never permits owner-token fallback or bypasses account checks',async()=>{
+  assert.equal((await gate({CLEARDROP_PUBLIC_DEMO:'1'})(request())).status,503)
+  const result=await gate({CLEARDROP_PUBLIC_DEMO:'1',CLEARDROP_ACCOUNT_AUTH:'1',CLEARDROP_HOSTED:'1'})(request())
+  assert.equal(result.status,401);assert.equal(result.headers.get('www-authenticate'),null)
+})
 test('custom login and shorter passwords require explicit owner configuration', async () => {
   const env = {CLEARDROP_HOSTED:'1', CLEARDROP_PREVIEW_USERNAME:'test-owner', CLEARDROP_PREVIEW_PASSWORD:'fixture8'}
   const authorization = 'Basic ' + Buffer.from('test-owner:fixture8').toString('base64')

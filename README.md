@@ -13,8 +13,10 @@ pnpm dev
 
 Open http://127.0.0.1:3000 and choose:
 
-- **My doorway** — real camera or Ring sandbox video. Requires a Ring token.
-- **Try a demo** — three labelled scenarios: a parcel beside the zone, a blocked zone followed by removal, and lost video during an alert. Scripted observations exercise the decision rules; no token needed.
+- **Try the working demo** — actual browser video-processing checks at `/test`; no account or token needed in public-demo mode.
+- **Use my phone camera** — local camera testing at `/phone`; no Ring token needed.
+
+**My doorway** is at `/doorway`, separate from the public landing page. Personal Ring access requires a verified account in public-demo mode. `/demo` offers three labelled illustrated scenarios using scripted observations, not live video.
 
 For actual video processing, open `/test`: **Start test video → Area is empty — start watching → Run all three tests**. A generated moving video is decoded and sampled by the production monitoring component. Results are measured from pixels and real elapsed time, not preset pass badges. This verifies the camera-processing path, not physical Ring playback or semantic recognition. Use `/phone` with a real box for a physical-camera check.
 
@@ -41,9 +43,9 @@ Never commit the token. Renew it when it expires. Browser Ring connections use a
 ## Important limitations
 This is an experimental prototype, **not a safety system**. Scene change is not parcel recognition. OWL-ViT missed the visible parcel in our Ring test; Grounding DINO loaded but timed out on its first synthetic inference. Both remain experimental. Read the [evaluation evidence](docs/sandbox-evaluation.md).
 
-No remote caregiver notifications, background monitoring after closing the page, or production multi-user authentication are implemented. Activity and captured clips are memory-only; zone coordinates use local storage. Model weights/runtime files are downloaded when enabled; frames are not sent to a recognition service.
+No remote caregiver notifications or background monitoring after closing the page are implemented. Activity and captured clips are memory-only; zone coordinates use local storage. Model weights/runtime files are downloaded when enabled; frames are not sent to a recognition service.
 
-Local commands bind to **127.0.0.1**. The optional [Railway preview](docs/hosting.md) requires a private access password and disables inherited webhooks. It is a single-owner preview, not production multi-user authentication. Production requires account-scoped authorization, rate limits and retention controls. The inherited refresh-token workflow has not been validated end-to-end for this release.
+Local commands bind to **127.0.0.1**. The [Railway deployment](docs/hosting.md) supports either a private owner preview or explicit public-demo mode. The latter exposes only token-free demonstrations and account endpoints; Ring routes still require verified account access and never fall back to the server owner's token. Inherited webhooks remain disabled in hosted mode. Durable consumer Ring OAuth and distributed abuse controls are not implemented; the inherited refresh-token workflow is not verified end-to-end.
 
 An optional [email-account foundation](docs/account-security.md) adds sign-up, verification, sign-in/out, recovery and account deletion through Supabase. It is disabled until the owner configures a project. `/account` clearly reports setup status; it does not simulate successful authentication. This version is not an App Store/Play Store release or a security-certified product.
 

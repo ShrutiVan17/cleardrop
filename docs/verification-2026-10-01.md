@@ -1,12 +1,12 @@
 # Verification — October 1, 2026
 
 - Production build passed on Windows, Node 24.19.0, Next 15.5.27.
-- 77 deterministic tests passed after AI-freshness and hosted account-gate follow-ups. Auth policy tests and mocked Ring tests are not live-provider evidence.
+- 84 deterministic tests passed after AI-freshness, public-demo boundaries and account rate-limit follow-ups. Auth policy tests and mocked Ring tests are not live-provider evidence.
 - Registry production-dependency audit returned no known vulnerabilities after updating Next and overriding PostCSS 8.5.23 / sharp 0.35.4. This does not establish complete application security.
 - `/test` ran in the actual browser: generated 640×360 moving video, decoded by HTMLVideoElement and sampled through the same ClearDrop/ChangeMonitor path as real input. All three cases passed: outside-zone change ignored; persistent inside-zone change and reference restoration; video stopped with prior change unresolved. At completion the UI showed 143 sampled frames, including pre-run reference monitoring. No preset pass values or scripted detector boxes were used.
 - Backend health returned HTTP 200. Account-disabled UI reports setup required, not successful signup.
 - Separate account-enabled server without project configuration rejected private phone/Ring routes with HTTP 503, rejected cross-site account writes with HTTP 403, and left the non-personal demo available.
-- Initial checks were account-disabled. The owner's free Supabase project was subsequently configured for controlled tests: email confirmation required, 12-character minimum, secure password changes, and exact hosted/local confirmation redirects. SMTP for general public users, abuse controls and signup/recovery-email delivery remain unverified. Hosted account mode retains the owner Basic-auth outer gate.
+- Initial checks were account-disabled. The owner's free Supabase project was subsequently configured for controlled tests: email confirmation required, 12-character minimum, secure password changes, and exact hosted/local confirmation redirects. SMTP for general public users, distributed abuse controls and signup/recovery-email delivery remain unverified. Public-demo mode now bypasses Basic auth only for demonstrations/account entry, keeps Ring APIs account-protected, and disables public signup by default.
 - Physical phone-camera placement and new Ring playback were not exercised in this run. No physical Ring camera is available; the previous Playground token expired. Generated video is not evidence of hardware integration or semantic recognition accuracy.
 - No native store build, store submission, security certification or injury-prevention claim is made.
 
@@ -20,3 +20,11 @@
 ## Live backend account checks
 
 Supabase settings and server-key API checks both returned HTTP 200. Eight local-backend integration checks against the real provider passed: cross-site rejection; creation of one reserved-domain, admin-confirmed fixture without email; wrong-password rejection; provider login and verified session/camera-route access; logout blocking camera access; password change rejecting the old password; deletion requiring the current password; deletion with cleared session. The temporary fixture was removed. This is not email-verification or SMTP evidence, and no real user's password was used.
+
+## Public demonstration follow-up
+
+- The root page is now a token-free landing page; private Ring controls moved to `/doorway`.
+- Anonymous local HTTP checks passed for `/`, `/demo`, `/test`, `/phone`, `/account`, `/privacy` and the install manifest. No Basic-auth challenge was sent. `/doorway` redirected to account sign-in; Ring configuration, devices, token, events and stream endpoints returned 401. Cross-site account writes returned 403; unopened public signup returned 503 without emailing a fixture.
+- Eight live-provider account checks were rerun successfully using `/doorway` as the private route. The temporary reserved-domain test account was deleted; no real user was removed.
+- The actual browser reran all three generated-video cases successfully (82 sampled frames at completion). No account or Ring token was required. This remains controlled processing evidence, not fresh Ring playback.
+- `node scripts/test-public-live.cjs` checks the local public mode. Pass the configured HTTPS deployment URL to run the same anonymous checks there. It sends no credentials and never opens a Ring stream.
