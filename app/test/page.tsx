@@ -6,9 +6,8 @@ import { AppNavigation } from '../components/AppNavigation'
 import { ClearDrop } from '../components/ClearDrop'
 import { ChangeObservation } from '@/lib/change-monitor'
 import { drawCameraFixture, FIXTURE_ZONE, FixturePlacement } from '@/lib/camera-fixture'
+import { CameraTestEvidence, cameraTestPhase, CAMERA_TEST_NAMES, CameraTestResult } from '@/lib/camera-test-evidence'
 
-type Result = 'Waiting' | 'Passed' | 'Failed'
-const TEST_NAMES = ['Box beside the doorway: no change alert', 'Box inside, then removed: alert and verified clearing', 'Video lost: earlier alert remains unresolved']
 const initialObservation: ChangeObservation = { ready: false, blocked: false, unresolved: false, ratio: 0, scans: 0 }
 
 export default function CameraTestPage() {
@@ -19,10 +18,12 @@ export default function CameraTestPage() {
   const placement = useRef<FixturePlacement>('empty')
   const observation = useRef(initialObservation)
   const generation = useRef(0)
+  const evidence = useRef<CameraTestEvidence | null>(null)
   const [active, setActive] = useState(false)
   const [running, setRunning] = useState(false)
   const [seen, setSeen] = useState(initialObservation)
-  const [results, setResults] = useState<Result[]>(['Waiting', 'Waiting', 'Waiting'])
+  const [results, setResults] = useState<CameraTestResult[]>(['Waiting', 'Waiting', 'Waiting'])
+  const [report, setReport] = useState<ReturnType<CameraTestEvidence['report']> | null>(null)
   const [stage, setStage] = useState('Start the test video, then save its empty doorway reference.')
   const [error, setError] = useState('')
   const [backend, setBackend] = useState('Checking backend…')
@@ -50,7 +51,7 @@ export default function CameraTestPage() {
       const data = await res.json()
       setBackend(res.ok && data.status === 'ok' ? 'Backend responding — HTTP 200' : 'Backend check failed')
     }).catch(() => setBackend('Backend could not be reached')).finally(() => clearTimeout(timeout))
-    const hide = () => { if (document.hidden) { cancel(); setStage('Test interrupted: keep this page visible and start again.') } }
+    const hide = () => { if (document.hidden && (feed.current || runner.current)) { cancel(); evidence.current = null; setReport(null); setResults(['Waiting', 'Waiting', 'Waiting']); setStage('Test interrupted: keep this page visible and start again.') } }
     document.addEventListener('visibilitychange', hide)
     return () => { controller.abort(); clearTimeout(timeout); document.removeEventListener('visibilitychange', hide); cancel() }
   }, [])
@@ -59,6 +60,7 @@ export default function CameraTestPage() {
     cancel()
     const attempt = generation.current
     setError(''); setRunId(value => value + 1)
+    evidence.current = null; setReport(null)
     setResults(['Waiting', 'Waiting', 'Waiting']); observation.current = initialObservation; setSeen(initialObservation)
     placement.current = 'empty'
     try {
@@ -84,33 +86,38 @@ export default function CameraTestPage() {
   function run() {
     if (!active || !observation.current.ready || running) return
     const started = performance.now()
-    let outsidePassed = false, insidePassed = false, removedPassed = false, secondAlert = false, stopped = false
+    let stopped = false
+    const runEvidence = new CameraTestEvidence(started, observation.current)
+    evidence.current = runEvidence; setReport(null); placement.current = 'beside'
     setRunning(true); setResults(['Waiting', 'Waiting', 'Waiting'])
     runner.current = setInterval(() => {
-      const elapsed = performance.now() - started, current = observation.current
-      if (elapsed < 4500) {
+      const now = performance.now(), phase = cameraTestPhase(now - started)
+      setResults(runEvidence.results(now))
+      if (phase === 'outside') {
         placement.current = 'beside'; setStage('Test 1: the box stays outside your keep-clear area.')
-      } else if (elapsed < 10000) {
-        if (!outsidePassed) { outsidePassed = current.ready && !current.blocked && !current.unresolved && current.scans >= 8; setResults(items => [outsidePassed ? 'Passed' : 'Failed', items[1], items[2]]) }
+      } else if (phase === 'inside') {
         placement.current = 'inside'; setStage('Test 2: the box stays inside. The real change detector must wait three seconds.')
-        if (current.blocked) insidePassed = true
-      } else if (elapsed < 14000) {
-        placement.current = 'empty'; setStage('Test 2: box removed. Wait for the actual empty-reference checks to clear the alert.')
-        if (insidePassed && current.ready && !current.blocked && !current.unresolved) removedPassed = true
-        setResults(items => [items[0], removedPassed ? 'Passed' : items[1], items[2]])
-      } else if (elapsed < 19500) {
+      } else if (phase === 'restored') {
+        placement.current = 'empty'; setStage('Test 2: box removed. Wait for the scene to match the empty reference again.')
+      } else if (phase === 'second-alert') {
         placement.current = 'inside'; setStage('Test 3: create another real pixel-change alert before stopping the video.')
-        if (current.blocked && current.unresolved) secondAlert = true
-      } else if (elapsed < 20750) {
+      } else if (phase === 'lost') {
         if (!stopped) { stopped = true; release() }
         setStage('Test 3: video stopped. The earlier change must stay unresolved.')
       } else {
-        setResults(items => [items[0], insidePassed && removedPassed ? 'Passed' : 'Failed', secondAlert && !current.ready && current.unresolved ? 'Passed' : 'Failed'])
+        setReport(runEvidence.report(now)); evidence.current = null
         setStage('Tests finished. Results come from the same monitoring component used by phone and Ring video.')
         if (runner.current) clearInterval(runner.current)
         runner.current = null; setRunning(false)
       }
     }, 200)
+  }
+
+  function downloadReport() {
+    if (!report) return
+    const url = URL.createObjectURL(new Blob([JSON.stringify({ ...report, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' }))
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'cleardrop-camera-test.json'; anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   return <><Header connected={false} enabledCount={0} simpleMode /><AppNavigation active="demo" />
@@ -121,14 +128,15 @@ export default function CameraTestPage() {
       <section className="cd-camera-card"><div className="cd-card-heading"><span>Test doorway</span><span>{active ? 'Generated video playing' : 'Video stopped'}</span></div>
         <div className="cd-video"><video ref={videoRef} autoPlay muted playsInline aria-label="Controlled doorway test video" className="w-full h-full object-contain" />{!active && <div className="cd-video-placeholder"><p>{stage}</p>{!running && <button className="cd-button cd-primary" onClick={() => void start()}>Start test video</button>}</div>}</div>
       </section>
-      <section className="cleardrop-controls" aria-label="Camera test results"><p role="status">{stage}</p><ol className="mt-4 space-y-3">{TEST_NAMES.map((name, index) => <li key={name} className="flex justify-between gap-3"><span>{index + 1}. {name}</span><strong className={results[index] === 'Failed' ? 'cd-error' : ''}>{results[index]}</strong></li>)}</ol>
+      <section className="cleardrop-controls" aria-label="Camera test results"><p role="status" aria-live="polite">{stage}</p><ol className="mt-4 space-y-3">{CAMERA_TEST_NAMES.map((name, index) => <li key={name} className="flex justify-between gap-3"><span>{index + 1}. {name}</span><strong className={results[index] === 'Failed' ? 'cd-error' : ''}>{results[index]}</strong></li>)}</ol>
         <p className="cd-help">Actual analysis: {seen.scans} sampled frames · {Math.round(seen.ratio * 100)}% area changed · {seen.unresolved ? 'Earlier change unresolved' : seen.ready ? 'Monitoring' : 'Reference needed'}</p>
         {active && <button className="cd-button cd-primary mt-3" disabled={!seen.ready || running} onClick={run}>{running ? 'Tests running…' : 'Run all three tests'}</button>}
-        {running && <button className="cd-button mt-3 ml-3" onClick={() => { cancel(); setStage('Cancelled. Start again with a fresh empty reference.'); setResults(['Waiting', 'Waiting', 'Waiting']) }}>Cancel tests</button>}
+        {running && <button className="cd-button mt-3 ml-3" onClick={() => { cancel(); evidence.current = null; setReport(null); setStage('Cancelled. Start again with a fresh empty reference.'); setResults(['Waiting', 'Waiting', 'Waiting']) }}>Cancel tests</button>}
+        {report && <details className="cd-details mt-4"><summary>Measured test evidence</summary><p className="cd-help">Only samples collected during this run count. An interruption or reference reset fails the run. No frames or credentials are included.</p><p className="cd-help">Fresh samples: beside {report.phases.outside.samples} · inside {report.phases.inside.samples} · reference restored {report.phases.restored.samples} · second change {report.phases['second-alert'].samples}</p>{report.failure && <p className="cd-error" role="alert">{report.failure}</p>}<button className="cd-button" onClick={downloadReport}>Download test report</button></details>}
         {error && <p role="alert" className="cd-error">{error}</p>
         }
       </section>
-      <ClearDrop key={runId} videoRef={videoRef} active={active} deviceId="controlled-video-test" fixedZone={FIXTURE_ZONE} onObservation={sample => { observation.current = sample; setSeen(sample) }} />
+      <ClearDrop key={runId} videoRef={videoRef} active={active} deviceId="controlled-video-test" fixedZone={FIXTURE_ZONE} onObservation={sample => { observation.current = sample; evidence.current?.observe(sample, performance.now()); setSeen(sample) }} />
       <p className="cd-help mt-5"><a className="cd-text-link" href="/phone">Test a physical box with your phone</a> · <a className="cd-text-link" href="/doorway">Connect Ring preview</a> · <a className="cd-text-link" href="/demo">Illustrated walkthrough</a></p>
       <footer className="cd-footer">A passing controlled test verifies processing and state transitions only. Physical camera quality and Ring playback must be checked separately. Always check the doorway yourself.</footer>
     </main></>

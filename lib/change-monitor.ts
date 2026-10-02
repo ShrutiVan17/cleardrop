@@ -6,6 +6,7 @@ export type ChangeObservation = {
   unresolved: boolean
   ratio: number
   scans: number
+  sampledAt?: number
 }
 
 /** Shared by real camera monitoring and controlled video tests. No semantic AI claims. */
@@ -49,7 +50,7 @@ export class ChangeMonitor {
     this.lastSample = at
     this.state = { ready: true, blocked: next.active,
       unresolved: next.active || (this.state.unresolved && !(previous.active && !next.active)),
-      ratio, scans: this.state.scans + 1 }
+      ratio, scans: this.state.scans + 1, sampledAt: at }
     return this.snapshot()
   }
 }

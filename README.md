@@ -67,7 +67,9 @@ Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original
 - [Product walkthrough](docs/walkthrough.md)
 - [Architecture and security boundaries](docs/architecture.md)
 - [Detailed instructions](docs/cleardrop.md)
-- [Verification record](docs/release-checks.md)
+- [Current verification record](docs/verification-2026-10-01.md)
+- [Engineering case study](docs/engineering-case-study.md)
+- [Free Render hosting](docs/render-hosting.md)
 - [Account setup and security release boundaries](docs/account-security.md)
 - [Developer friction log](docs/friction-log.md)
 

@@ -32,3 +32,5 @@ Server credentials must never use NEXT_PUBLIC prefixes. WHEP session cleanup onl
 ## Verification
 
 `pnpm test` runs deterministic monitoring, interface, account, rate-limit and Ring-session checks. `pnpm typecheck` verifies TypeScript. `pnpm build` checks production compilation. Browser checks and build outcome are recorded in `verification-2026-10-01.md`. Successful tests do not establish real-world model accuracy or accessibility outcomes.
+
+`/test` feeds generated moving pixels through the same `ChangeMonitor` as camera input. `CameraTestEvidence` counts only fresh per-run observations, checks phase coverage and source-clock persistence, rejects gaps/reference resets, and exports an opt-in JSON report. Generated video is not a substitute for actual Ring playback or recognition evaluation.

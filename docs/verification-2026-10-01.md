@@ -28,3 +28,12 @@ Supabase settings and server-key API checks both returned HTTP 200. Eight local-
 - Eight live-provider account checks were rerun successfully using `/doorway` as the private route. The temporary reserved-domain test account was deleted; no real user was removed.
 - The actual browser reran all three generated-video cases successfully (82 sampled frames at completion). No account or Ring token was required. This remains controlled processing evidence, not fresh Ring playback.
 - `node scripts/test-public-live.cjs` checks the local public mode. Pass the configured HTTPS deployment URL to run the same anonymous checks there. It sends no credentials and never opens a Ring stream.
+
+## Measured camera-test follow-up
+
+- 92 deterministic tests passed after eight evidence-report regressions were added. The updated production build also passed. Counts earlier in this record describe earlier runs, not the current total.
+- Fixed a test-report timing error detected by a real browser run: React callback delay must not be mistaken for the monitor's persistence clock. Fresh observations now carry their actual sampling timestamp, and a callback-jitter regression verifies the boundary.
+- The local browser reran all three cases successfully after the fix, showing 79 sampled frames at completion. Per-run evidence excludes pre-run scans, retains transient outside-zone alerts, requires measured phase coverage, and fails on source interruption or reference resets. The downloadable JSON contains phase counts and state transitions, not footage or credentials.
+- Anonymous local HTTP checks passed again: public pages needed no credentials; private Ring endpoints rejected anonymous access; cross-site writes and unopened signup stayed blocked.
+- A 132-second WAV narration draft was generated locally with Microsoft's installed female Zira synthetic voice. It is not synchronized to a recording yet and contains no claim of fresh Ring playback.
+- Render free deployment configuration is prepared but not deployed or verified at this checkpoint. Owner sign-in is required. A fresh real Ring session remains separate from controlled-video evidence.

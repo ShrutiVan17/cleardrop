@@ -6,7 +6,7 @@ Record only what actually runs. Hide tokens and personal account details. Rehear
 
 Start the verified app locally. Use `/test` for a full automatic camera-processing check: Start test video, save the empty reference, then Run all three tests. Generated video is decoded by the browser and sampled by the same production monitoring component used for phone and Ring inputs. It is not real Ring footage or a semantic parcel-accuracy test.
 
-For Ring, use the masked Connect Ring preview form on `/` with a fresh token. No environment edit/redeployment is needed. Confirm moving video and arriving frames. For physical input, use `/phone` on HTTPS and move a real box. Do not label either connection as verified unless that session actually runs. If footage rights are unclear, resolve them before publishing. Attribution for the previously tested Package clip is in `third-party-notices.md`.
+For Ring, sign into `/doorway` and use the masked Connect Ring preview form with a fresh token. No environment edit/redeployment is needed. Confirm moving video and arriving frames. Public `/test` requires neither login nor a token. For physical input, use `/phone` on HTTPS and move a real box. Do not label either connection as verified unless that session actually runs. If footage rights are unclear, resolve them before publishing. Attribution for the previously tested Package clip is in `third-party-notices.md`.
 
 The matching motivating incident is Dominga G. Soto's April 24, 2021 slip on a hard cylindrical doorstep package delivered by USPS. The January 4, 2024 court findings discuss L1/L2 compression fractures, including the treatment-related sequence. Do not call this an Amazon delivery or say ClearDrop would have prevented it. Source: https://www.casemine.com/judgement/us/659b7a6eaf1d365f88db7008 (court findings reproduced).
 
@@ -16,15 +16,15 @@ Show `/demo` hero. Say: “A delivery can reach the right address and still bloc
 
 ## 0:20–1:05 — actual Ring integration
 
-Switch to `/`, choose Start camera and show moving Ring footage. Open Testing & connection details to show received frames. Say: “This is Ring sandbox video arriving through WHEP and WebRTC. Connection accepted is not enough—we check whether frames arrive.”
+Switch to `/doorway`, choose Start camera and show moving Ring footage. Open Testing & connection details to show received frames. Say: “This is Ring sandbox video arriving through WHEP and WebRTC. Connection accepted is not enough—we check whether frames arrive.” Only say this while actual frames arrive in that recording.
 
 Show Change doorway area and the position fields. If the selected scene has a genuinely empty area, choose Area is empty — start watching. Otherwise explain the empty reference and do not mark an occupied doorway as empty. Say: “The change detector finds persistent scene changes. It does not know whether the change is a parcel; the viewer reviews it.”
 
-## 1:05–1:55 — decision lifecycle, explicitly simulated
+## 1:05–1:55 — measured processing tests
 
-Switch to `/demo`. Say: “This labelled simulation supplies scripted detections to our actual decision rules. It is not an AI accuracy demonstration.” Step through all seven stages: outside-zone placement; inside-zone candidate; persistent overlap; connection lost; checking removal; second observation; removal observed.
+Switch to `/test`. Say: “These are generated video pixels decoded and sampled by the same production monitor. They are not Ring footage or a parcel-recognition benchmark.” Start the video, save its genuinely empty reference, and run all three tests. Show the outside-zone case without an alert, the persistent inside-zone change followed by reference restoration, and video loss retaining the earlier unresolved concern. Expand Measured test evidence and show the fresh sample counts. Download its actual JSON report if useful.
 
-Say: “The important detail is what happens when evidence disappears. We keep the prior obstruction unresolved. A single clear scan cannot dismiss it; removal needs repeated observations across five seconds.”
+Say: “A disconnected camera is not an all-clear. This pixel monitor requires three seconds of persistent change and two seconds matching the reference before clearing. The separate experimental semantic-decision policy requires repeated negative observations across five seconds. Neither proves physical clearance or safety.”
 
 ## 1:55–2:20 — honest evaluation
 
