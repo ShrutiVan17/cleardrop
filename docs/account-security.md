@@ -1,6 +1,6 @@
 # Account authentication foundation
 
-This is an implemented, disabled-by-default foundation, not a security certification or store-ready release. Account signup/login/email verification/recovery/deletion have not been tested against a live Supabase project yet.
+This is an implemented, disabled-by-default foundation, not a security certification or store-ready release. Controlled local tests against the owner's live Supabase project passed login, logout, password change and deletion. Real signup-confirmation and recovery-email delivery remain unverified; the integration fixture was admin-confirmed, not verified through email.
 
 ## Free-tier setup
 
@@ -26,5 +26,7 @@ This is an implemented, disabled-by-default foundation, not a security certifica
 Live signup/verification/login/recovery/logout/deletion tests; independent security review; abuse controls and MFA design; operator privacy/support details and retention policy; HTTPS operations/backups/incident handling; approved consumer Ring OAuth; encrypted durable per-user Ring credential storage; native Android/iOS packaging, permission disclosures and signed builds; actual store review and developer accounts.
 
 The current website is not a submitted native app. A passing generated-video check does not prove physical Ring integration or recognition reliability.
+
+For an explicit, temporary live backend test, run `node scripts/test-account-live.cjs --live` from the project root with private `.env.production.local` configuration and the local server running. The script creates one unique `@example.invalid` account, tests eight checks, and removes only that fixture. It does not send email or verify the signup/recovery email flow. This test is not part of the default deterministic suite.
 
 Sources: https://supabase.com/docs/guides/auth/server-side/creating-a-client ; https://developer.apple.com/support/offering-account-deletion-in-your-app ; https://support.google.com/googleplay/android-developer/answer/13327111
