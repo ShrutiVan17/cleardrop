@@ -10,7 +10,7 @@ This is an implemented, disabled-by-default foundation, not a security certifica
 4. Allow the exact `/auth/confirm` URL in Auth redirect settings. Confirmation and recovery use the provider's PKCE code exchange or verified email token hash. Use email templates that redirect to this handler. No user-supplied redirect destination is accepted.
 5. Add a server-only Supabase secret/service-role key as `SUPABASE_SECRET_KEY` for account deletion. Never prefix it with `NEXT_PUBLIC`. It is used only after validating the user and rechecking their current password.
 6. Configure provider abuse protection before opening public signup. CAPTCHA is not wired into this UI yet; do not enable public signup and call it abuse-resistant. Provider limits currently see the backend's outbound IP. Distributed application throttling is still required for public traffic.
-7. Set `CLEARDROP_ACCOUNT_AUTH=1` only after the above settings are ready. Missing or unreachable account configuration fails closed. This switches private camera routes from owner Basic auth to verified user accounts. Keep the original private owner preview until you have tested this mode.
+7. Set `CLEARDROP_ACCOUNT_AUTH=1` for controlled account testing after the project settings are ready. Missing or unreachable account configuration fails closed. On the hosted deployment, owner Basic auth remains an outer gate for account signup and camera routes; verified user accounts are an additional boundary, not a public-signup launch. Public release requires separately reviewed abuse controls and email delivery.
 
 ## Implemented boundaries
 

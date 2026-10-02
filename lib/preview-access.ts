@@ -4,6 +4,17 @@ export function hostedPreview(): boolean {
 }
 
 export async function previewAccess(request: Request): Promise<Response | null> {
+  const ownerDenied = await ownerPreviewAccess(request)
+  if (ownerDenied) return ownerDenied
+  if (process.env.CLEARDROP_ACCOUNT_AUTH === '1') {
+    const { accountAccess } = await import('./account-auth')
+    return accountAccess(request)
+  }
+  return null
+}
+
+/** Keep account testing behind the owner gate until public-release controls exist. */
+export async function ownerPreviewAccess(request: Request): Promise<Response | null> {
   if (!hostedPreview()) return null
   const password = process.env.CLEARDROP_PREVIEW_PASSWORD
   const username = process.env.CLEARDROP_PREVIEW_USERNAME || 'cleardrop'

@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { accountClient, accountConfig, accountEnabled } from '@/lib/account-auth'
 import { readSmallJson, sameSiteWrite, validEmail, validPassword } from '@/lib/account-policy'
+import { ownerPreviewAccess } from '@/lib/preview-access'
 
 export const runtime = 'nodejs'
 const headers = { 'Cache-Control': 'private, no-store' }
 export async function GET(request: Request) {
+  const ownerDenied = await ownerPreviewAccess(request)
+  if (ownerDenied) return ownerDenied
   if (!accountEnabled()) return NextResponse.json({ configured: false, message: 'Account setup is not activated. This is still the owner preview.' }, { headers })
   try {
     const { data, error } = await accountClient(request).auth.getUser()
@@ -13,6 +16,8 @@ export async function GET(request: Request) {
   } catch { return NextResponse.json({ error: 'Account service is unavailable.' }, { status: 503, headers }) }
 }
 export async function POST(request: Request) {
+  const ownerDenied = await ownerPreviewAccess(request)
+  if (ownerDenied) return ownerDenied
   if (!sameSiteWrite(request)) return NextResponse.json({ error: 'Cross-site request blocked.' }, { status: 403, headers })
   if (!accountEnabled()) return NextResponse.json({ error: 'Accounts are not activated yet.' }, { status: 503, headers })
   try { accountConfig() } catch { return NextResponse.json({ error: 'Account service is not configured.' }, { status: 503, headers }) }

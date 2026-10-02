@@ -32,6 +32,11 @@ test('hosted preview fails closed without a strong password', async () => {
     assert.equal((await gate(env)(request())).status, 503)
   }
 })
+
+test('enabling accounts never opens hosted signup without the owner preview gate', async () => {
+  assert.equal((await gate({CLEARDROP_HOSTED:'1',CLEARDROP_ACCOUNT_AUTH:'1'})(request())).status,503)
+  assert.equal((await gate({CLEARDROP_HOSTED:'1',CLEARDROP_ACCOUNT_AUTH:'1',CLEARDROP_PREVIEW_PASSWORD:password})(request())).status,401)
+})
 test('missing, incorrect and malformed credentials are rejected', async () => {
   const check = gate({CLEARDROP_HOSTED:'1',CLEARDROP_PREVIEW_PASSWORD:password})
   for (const value of ['', 'Basic !!!', 'Basic '+Buffer.from('cleardrop:wrong').toString('base64')]) {

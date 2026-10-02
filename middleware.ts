@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { hostedPreview, previewAccess } from './lib/preview-access'
+import { hostedPreview, previewAccess, ownerPreviewAccess } from './lib/preview-access'
 import { accountEnabled, accountMiddleware } from './lib/account-auth'
 
 export async function middleware(request: NextRequest) {
   if (['/api/health', '/manifest.webmanifest', '/icon.svg'].includes(request.nextUrl.pathname)) return NextResponse.next()
   if (accountEnabled()) {
+    const ownerDenied = await ownerPreviewAccess(request)
+    if (ownerDenied) return ownerDenied
     if (['/account', '/privacy', '/demo', '/test', '/auth/confirm', '/api/account'].includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith('/_next/')) return NextResponse.next()
     return accountMiddleware(request)
   }
