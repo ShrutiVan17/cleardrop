@@ -68,6 +68,16 @@ test('paused camera hides unavailable setup actions',()=>{
   assert.doesNotMatch(html.split('<details')[0],/<button/)
   assert.match(html,/Experimental parcel recognition/)
 })
+test('camera setup offers a manual existing-parcel path and gates empty calibration',()=>{
+ const {ClearDrop}=load('app/components/ClearDrop.tsx')
+ const html=render(React.createElement(ClearDrop,{videoRef:{current:null},active:true}))
+ assert.match(html,/A parcel is already here/)
+ assert.match(html,/I visually checked that the marked area is empty/)
+ assert.match(html,/<button[^>]*disabled=""[^>]*>Area is empty — start watching/)
+ const source=fs.readFileSync(path.join(root,'app/components/ClearDrop.tsx'),'utf8')
+ assert.match(source,/This is your visual report, not an AI detection/)
+ assert.match(source,/reportedParcelRemoved/)
+})
 test('primary and secondary text colors meet normal-text contrast',()=>{
   function luminance(hex){const rgb=hex.match(/\w\w/g).map(c=>parseInt(c,16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]}
   for(const [foreground,background] of [['ffffff','126b58'],['526761','f7f8f4'],['203a36','ffffff'],['805319','fff2dc']]){

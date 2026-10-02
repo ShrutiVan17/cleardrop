@@ -76,7 +76,7 @@ export default function CameraTestPage() {
       video.srcObject = stream
       await video.play()
       if (attempt !== generation.current) return
-      setActive(true); setStage('The area is empty. Tap “Area is empty — start watching” below.')
+      setActive(true); setStage('Check the empty area, tick the visual-check box, then tap “Area is empty — start watching” below.')
     } catch (e) {
       if (attempt !== generation.current) return
       release(); setError(e instanceof Error ? e.message : 'Test video could not start.')

@@ -16,7 +16,8 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
   const [ratio, setRatio] = useState(0)
   const [blocked, setBlocked] = useState(false)
   const [unresolved, setUnresolved] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [reportedParcel, setReportedParcel] = useState(false)
+  const [emptyChecked, setEmptyChecked] = useState(false)
   const [error, setError] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [fit, setFit] = useState({ left: 0, top: 0, width: 0, height: 0 })
@@ -38,8 +39,8 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
     setEntries(items => [{ id: ++seq.current, time: new Date().toLocaleTimeString(), kind, detail }, ...items].slice(0, 20))
   }
   function reset() {
-    monitor.current.pause(); lastTime.current = -1
-    setReady(false); setRatio(0); setBlocked(false); setConfirmed(false); setError('')
+    const paused = monitor.current.pause(); lastTime.current = -1
+    setReady(false); setRatio(0); setBlocked(false); setReportedParcel(!!paused.reportedParcel); setUnresolved(paused.unresolved); setEmptyChecked(false); setError('')
   }
   useEffect(() => {
     monitor.current = new ChangeMonitor()
@@ -52,7 +53,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
     } catch { setZone(fixedZone || defaultZone) }
   }, [deviceId])
   useEffect(() => { if (!active) { reset(); setEditing(false) } }, [active])
-  useEffect(() => { observationCallback.current?.(monitor.current.snapshot()) }, [active, ready, blocked, unresolved])
+  useEffect(() => { observationCallback.current?.(monitor.current.snapshot()) }, [active, ready, blocked, unresolved, reportedParcel])
 
   useEffect(() => {
     const video = videoRef.current
@@ -79,11 +80,17 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
     return context.getImageData(0, 0, canvas.width, canvas.height)
   }
 
-  function calibrate() {
+  function reportParcel() {
+    const sample = monitor.current.reportParcel()
+    setReady(false); setBlocked(false); setRatio(0); setReportedParcel(true); setUnresolved(sample.unresolved); setEmptyChecked(false); setError('')
+    log('Parcel reported by viewer', 'An already-visible parcel was reported manually. No occupied reference was saved. Removal needs an explicit visual check.')
+  }
+
+  function calibrate(reportedParcelRemoved = false) {
     try {
       if (!validZone(zone)) throw new Error('Mark a doorway area inside the video first.')
-      monitor.current.calibrate(capture(), zone, performance.now()); lastFrameAt.current = performance.now()
-      setReady(true); setBlocked(false); setUnresolved(false); setConfirmed(false); setError(''); setRatio(0)
+      monitor.current.calibrate(capture(), zone, performance.now(), { checkedEmpty: emptyChecked, reportedParcelRemoved }); lastFrameAt.current = performance.now()
+      setReady(true); setBlocked(false); setUnresolved(false); setReportedParcel(false); setEmptyChecked(false); setError(''); setRatio(0)
       log('Reference saved', 'Current frame marked as an empty doorway. Monitoring started.')
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not capture reference') }
   }
@@ -110,11 +117,10 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
         if (!next.ready) { setReady(false); setError('Video was interrupted. Check the area and save a new empty reference.'); return }
         if (next.blocked && !previous.blocked) {
           setUnresolved(true)
-          setConfirmed(false)
           log('Possible obstruction', 'A persistent change appeared inside the doorway zone. Review the video.')
         } else if (!next.blocked && previous.blocked) {
           setUnresolved(false)
-          setConfirmed(false); log('Change cleared', 'The doorway looks similar to the saved reference again.')
+          log('Change cleared', 'The doorway looks similar to the saved reference again.')
         }
       } catch (e) { monitor.current.pause(); setBlocked(false); setError(e instanceof Error ? e.message : 'Analysis failed'); setReady(false) }
     }, 250)
@@ -125,7 +131,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
     const rect = overlay.current!.getBoundingClientRect()
     return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) }
   }
-  const title = !active ? unresolved ? 'Camera paused — earlier change still needs review' : 'Start the camera to begin' : editing ? 'Mark the space to keep clear' : packages.alert ? 'Please check your doorway' : !ready ? 'Is the marked area empty?' : blocked ? confirmed ? 'You confirmed a parcel is in the way' : 'Something changed near your door' : 'Watching your doorway'
+  const title = reportedParcel ? active ? 'You reported a parcel in the marked area' : 'Camera paused — reported parcel still needs review' : !active ? unresolved ? 'Camera paused — earlier change still needs review' : 'Start the camera to begin' : editing ? 'Mark the space to keep clear' : packages.alert ? 'Please check your doorway' : !ready ? 'Is the marked area empty?' : blocked ? 'Something changed near your door' : 'Watching your doorway'
 
   return <>
     {active && fit.width > 0 && videoRef.current?.parentElement && createPortal(<div ref={overlay} aria-label="Doorway zone editor" style={{ ...fit, position: 'absolute', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none', zIndex: 5 }}
@@ -133,33 +139,35 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
       onPointerMove={e => { if (!drag.current) return; const p = point(e), a = drag.current; setZone({ x: Math.min(a.x,p.x), y: Math.min(a.y,p.y), w: Math.abs(a.x-p.x), h: Math.abs(a.y-p.y) }) }}
       onPointerUp={e => { if (!drag.current) return; drag.current = null; if (!validZone(zone)) setZone(defaultZone) }}
       onPointerCancel={() => { drag.current = null }}>
-      <div style={{ position: 'absolute', left: `${zone.x*100}%`, top: `${zone.y*100}%`, width: `${zone.w*100}%`, height: `${zone.h*100}%`, border: `2px ${editing ? 'dashed' : 'solid'} ${blocked ? '#fb7185' : '#5eead4'}`, background: blocked ? '#fb71851c' : '#5eead414' }}>
-        <span className="absolute left-0 top-0 bg-slate-950/90 px-2 py-1 text-xs text-white">{blocked ? 'Review obstruction' : 'Doorway zone'}</span>
+      <div style={{ position: 'absolute', left: `${zone.x*100}%`, top: `${zone.y*100}%`, width: `${zone.w*100}%`, height: `${zone.h*100}%`, border: `2px ${editing ? 'dashed' : 'solid'} ${blocked || reportedParcel ? '#fb7185' : '#5eead4'}`, background: blocked || reportedParcel ? '#fb71851c' : '#5eead414' }}>
+        <span className="absolute left-0 top-0 bg-slate-950/90 px-2 py-1 text-xs text-white">{reportedParcel ? 'Parcel reported by you' : blocked ? 'Review obstruction' : 'Doorway zone'}</span>
       </div>
       {packages.boxes.map((d,i)=><div key={i} style={{position:'absolute',left:`${d.box.xmin*100}%`,top:`${d.box.ymin*100}%`,width:`${(d.box.xmax-d.box.xmin)*100}%`,height:`${(d.box.ymax-d.box.ymin)*100}%`,border:`2px solid ${d.overlap>=.25?'#fb923c':'#a78bfa'}`}}><span className="bg-slate-950/90 px-1 text-xs">Possible parcel · score {d.score.toFixed(2)}</span></div>)}
     </div>, videoRef.current.parentElement)}
     <section className="cleardrop-controls" aria-label="ClearDrop monitoring">
       <h2 className="text-xl font-semibold" role="status" aria-live="polite">{title}</h2>
-      {unresolved && (!active || !ready) && <p className="cd-review-alert" role="alert">The earlier doorway change has not been verified as removed. Reconnect, check the area yourself, and save a new empty reference only when it is actually clear.</p>}
+      {reportedParcel ? <p className="cd-review-alert" role="alert">This is your visual report, not an AI detection. No empty reference has been saved. The parcel stays unresolved through video loss until you explicitly check its removal and save a genuinely empty reference.</p> : unresolved && (!active || !ready) && <p className="cd-review-alert" role="alert">The earlier doorway change has not been verified as removed. Reconnect, check the area yourself, and save a new empty reference only when it is actually clear.</p>}
       <p className="cd-help">{!active ? 'You’ll be able to mark the doorway once the video is playing.' : editing ? 'Drag a box over the doorway in the video, or use the position fields below.' : !ready ? 'Keep the marked area empty, then start watching. Change the area if it doesn’t cover your doorway.' : 'We’ll ask you to check if a change stays in the marked area. Keep this page open.'}</p>
+      {active && !editing && !ready && <label className="flex gap-2 items-start mt-4"><input type="checkbox" checked={emptyChecked} onChange={e => setEmptyChecked(e.target.checked)} /><span>{reportedParcel ? 'I removed the reported parcel and visually checked that the marked area is empty.' : 'I visually checked that the marked area is empty — no parcel or object is already there.'}</span></label>}
       {active && <div className="flex flex-wrap gap-3 mt-4">
         {editing ? <button className="cd-button cd-primary" onClick={() => {
           if (!validZone(zone)) { setError('Choose a larger area inside the video.'); return }
           try { localStorage.setItem(`cleardrop.zone.${deviceId || 'default'}`, JSON.stringify(zone)); setError('') } catch { setError('The area works for this session, but could not be saved in this browser.') }
           setEditing(false)
         }}>Save area</button> : <>
-          {!ready && <button className="cd-button cd-primary" onClick={calibrate}>Area is empty — start watching</button>}
+          {!ready && <button className="cd-button cd-primary" disabled={!emptyChecked} onClick={() => calibrate(reportedParcel)}>{reportedParcel ? 'Parcel removed — start watching' : 'Area is empty — start watching'}</button>}
+          {!ready && !reportedParcel && <button className="cd-button" onClick={reportParcel}>A parcel is already here</button>}
           {!fixedZone && <button className="cd-button" onClick={() => { reset(); setEditing(true) }}>Change doorway area</button>}
         </>}
       </div>}
       {editing && <fieldset className="mt-4"><legend className="text-sm mb-2">Area position (percent of video)</legend><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{(['x','y','w','h'] as const).map(key => <label key={key} className="text-sm">{{x:'Left',y:'Top',w:'Width',h:'Height'}[key]}<input className="cd-input" type="number" min={key==='w'||key==='h'?3:0} max={100} value={Math.round(zone[key]*100)} onChange={e => { const v=Math.max(0,Math.min(1,Number(e.target.value)/100)); setZone(z => { const n={...z,[key]:v}; n.w=Math.min(n.w,1-n.x); n.h=Math.min(n.h,1-n.y); return n }) }} /></label>)}</div></fieldset>}
-      {blocked && <div role="alert" className="cd-review-alert"><p>{confirmed ? 'You confirmed a parcel is blocking the marked area.' : 'A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?'}</p><div className="flex flex-wrap gap-2 mt-3">{!confirmed && <button className="cd-button" onClick={() => {setConfirmed(true);log('Package confirmed', 'Manually confirmed by the viewer.')}}>Yes, there’s a parcel</button>}<button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
+      {blocked && <div role="alert" className="cd-review-alert"><p>A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?</p><div className="flex flex-wrap gap-2 mt-3"><button className="cd-button" onClick={reportParcel}>Yes, there’s a parcel</button><button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
       {packages.status!=='off' && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
       {error && <p role="alert" className="cd-error mt-3">{error}</p>}
       <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review. This does not measure parcel size or physical walking clearance.</p>
       <details className="cd-details mt-4">
         <summary>More options</summary>
-        {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><button className="cd-button" disabled={editing} onClick={calibrate}>Save a new empty reference</button></div>}
+        {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><label className="flex gap-2 my-3"><input type="checkbox" checked={emptyChecked} onChange={e => setEmptyChecked(e.target.checked)} /><span>I visually checked that the marked area is empty before replacing the reference.</span></label><button className="cd-button" disabled={editing || !emptyChecked} onClick={() => calibrate()}>Save a new empty reference</button></div>}
         <h3 className="font-semibold mt-3">Experimental parcel recognition</h3>
         <p className="cd-help">This model missed the parcel in our initial Ring test. It can miss or misidentify objects. No detection does not mean the doorway is clear.</p>
         <p className="cd-help">Optional download: about 155 MB plus runtime files. Frames stay on this device. You do not need this model for change alerts.</p>

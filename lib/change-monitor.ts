@@ -7,6 +7,7 @@ export type ChangeObservation = {
   ratio: number
   scans: number
   sampledAt?: number
+  reportedParcel?: boolean
 }
 
 /** Shared by real camera monitoring and controlled video tests. No semantic AI claims. */
@@ -27,14 +28,23 @@ export class ChangeMonitor {
     return this.snapshot()
   }
 
-  calibrate(frame: Frame, zone: Zone, at: number): ChangeObservation {
+  /** Human report, not a model detection. Never learn an occupied reference. */
+  reportParcel(): ChangeObservation {
+    this.pause()
+    this.state = { ...this.state, reportedParcel: true, unresolved: true }
+    return this.snapshot()
+  }
+
+  calibrate(frame: Frame, zone: Zone, at: number, confirmation?: { checkedEmpty: boolean; reportedParcelRemoved?: boolean }): ChangeObservation {
+    if (confirmation?.checkedEmpty !== true) throw new Error('Check the marked area is empty before saving a reference.')
+    if (this.state.reportedParcel && confirmation.reportedParcelRemoved !== true) throw new Error('Confirm the reported parcel was removed before saving an empty reference.')
     if (!validZone(zone) || !Number.isFinite(at)) throw new Error('Choose a valid doorway area and fresh reference.')
     // Copy pixels: a reusable capture buffer must not silently change the reference.
     this.reference = { width: frame.width, height: frame.height, data: new Uint8ClampedArray(frame.data) }
     this.zone = { ...zone }
     this.persistence = emptyPersistence()
     this.lastSample = at
-    this.state = { ready: true, blocked: false, unresolved: false, ratio: 0, scans: 0 }
+    this.state = { ready: true, blocked: false, unresolved: false, reportedParcel: false, ratio: 0, scans: 0 }
     return this.snapshot()
   }
 

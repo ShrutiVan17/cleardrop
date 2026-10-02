@@ -31,6 +31,8 @@ The demo is a labelled simulation, not proof of AI recognition or actual Ring pl
 2. On **My doorway**, paste the token into **Connect Ring preview**. The server validates it with Ring before saving a per-browser session. No environment-file change or deployment is required. Alternatively, set `RING_ACCESS_TOKEN` privately on the server.
 3. Choose a discovered camera, then **Start camera**. Adjust the marked area if needed and choose **Area is empty — start watching**, only **while the area is empty**.
 
+If a parcel is already visible, choose **A parcel is already here**. This is an explicit viewer report, not an AI detection; the app does not save occupied pixels as an empty reference. The report remains unresolved through video loss. Remove the parcel, check the area yourself, tick the removal/empty-area confirmation, then save a new reference. Every empty-reference save requires a visual-check confirmation.
+
 Never commit the token. Renew it when it expires. Browser Ring connections use an opaque HttpOnly cookie and bounded single-process server memory; server restarts or sleeping-container replacement can end the session. These connections require one server replica and are not a durable production OAuth system. For replay testing, clips and frames stay on your device.
 
 ## Features
@@ -69,7 +71,8 @@ Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original
 - [Product walkthrough](docs/walkthrough.md)
 - [Architecture and security boundaries](docs/architecture.md)
 - [Detailed instructions](docs/cleardrop.md)
-- [Current verification record](docs/verification-2026-10-01.md)
+- [Current verification record](docs/verification-2026-10-02.md)
+- [Earlier integration and deployment checks](docs/verification-2026-10-01.md)
 - [Engineering case study](docs/engineering-case-study.md)
 - [Free Render hosting](docs/render-hosting.md)
 - [Account setup and security release boundaries](docs/account-security.md)

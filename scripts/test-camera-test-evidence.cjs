@@ -9,7 +9,7 @@ function frame(placement='empty'){
  return{width,height,data}
 }
 function productionRun(mutate=(sample)=>sample){
- const monitor=new ChangeMonitor();monitor.calibrate(frame(),{x:.3,y:.5,w:.4,h:.4},0)
+ const monitor=new ChangeMonitor();monitor.calibrate(frame(),{x:.3,y:.5,w:.4,h:.4},0,{checkedEmpty:true})
  const evidence=new CameraTestEvidence(0,initial)
  for(let at=250;at<19500;at+=250){const placement=at<4500?'beside':at<10000?'inside':at<14000?'empty':'inside';evidence.observe(mutate(monitor.observe(frame(placement),at),at),at)}
  evidence.observe(mutate(monitor.pause(),19750),19750)
@@ -54,7 +54,7 @@ test('invalid starts cannot produce green results and reports copy internal evid
  assert.equal(valid.report(21000).phases.outside.samples,17);assert.ok(valid.report(21000).transitions.length>0)
 })
 test('callback jitter cannot shorten the source-clock persistence interval',()=>{
- const monitor=new ChangeMonitor();monitor.calibrate(frame(),{x:.3,y:.5,w:.4,h:.4},0)
+ const monitor=new ChangeMonitor();monitor.calibrate(frame(),{x:.3,y:.5,w:.4,h:.4},0,{checkedEmpty:true})
  const evidence=new CameraTestEvidence(0,initial)
  for(let at=250;at<19500;at+=250)evidence.observe(monitor.observe(frame(at<4500?'beside':at<10000?'inside':at<14000?'empty':'inside'),at),at+(at%500===0?12:2))
  evidence.observe(monitor.pause(),19750)
