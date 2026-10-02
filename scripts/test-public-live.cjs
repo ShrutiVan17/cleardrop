@@ -1,7 +1,7 @@
 // Anonymous HTTP checks; sends no credentials, camera tokens or email.
 const assert=require('node:assert/strict')
 const origin=new URL(process.argv[2]||'http://127.0.0.1:3000').origin
-if(!['http://127.0.0.1:3000','https://cleardrop-production-d5f1.up.railway.app'].includes(origin))throw new Error('Use the configured local or hosted deployment.')
+if(!['http://127.0.0.1:3000','https://cleardrop-production-d5f1.up.railway.app','https://cleardrop-shrutivan17.onrender.com'].includes(origin))throw new Error('Use the configured local or hosted deployment.')
 async function get(path,options={}){return fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(60000),...options})}
 ;(async()=>{
   for(const path of ['/','/demo','/test','/phone','/account','/privacy','/manifest.webmanifest']){

@@ -1,5 +1,9 @@
 # Free Render deployment
 
+Public origin: https://cleardrop-shrutivan17.onrender.com. One Docker service was created on the Free plan with `/api/health` as its health check. The existing Supabase project is reused; no additional database, disk or paid compute was created. The server secret was transferred only into private Render settings with the owner's explicit approval.
+
+The service is linked through Public Git Repository, avoiding extra GitHub account permissions. Do not assume future commits deploy automatically: use Render's Manual Deploy → Deploy latest commit and verify the deployed SHA after an update. `render.yaml` is a reproducible configuration template, not evidence that this manually created service is managed by a Blueprint.
+
 `render.yaml` declares one Docker web service on the **free** compute plan, with no paid database or disk. Alternatively, create a Web Service from this public repository, select Docker and explicitly select Free before creating it. The existing Dockerfile runs the deterministic tests and production build before starting the app. No payment details are required for this setup.
 
 Set the private environment values in Render, not in GitHub: `CLEARDROP_SITE_URL` must be the exact HTTPS service origin, and the three `SUPABASE_*` values must come from the existing project. The secret key is server-only. Do not add a shared Ring Playground token: authenticated owners connect their own short-lived preview sessions in `/doorway`. Public signup remains disabled until SMTP and abuse controls are verified.

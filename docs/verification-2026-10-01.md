@@ -37,3 +37,11 @@ Supabase settings and server-key API checks both returned HTTP 200. Eight local-
 - Anonymous local HTTP checks passed again: public pages needed no credentials; private Ring endpoints rejected anonymous access; cross-site writes and unopened signup stayed blocked.
 - A 132-second WAV narration draft was generated locally with Microsoft's installed female Zira synthetic voice. It is not synchronized to a recording yet and contains no claim of fresh Ring playback.
 - Render free deployment configuration is prepared but not deployed or verified at this checkpoint. Owner sign-in is required. A fresh real Ring session remains separate from controlled-video evidence.
+
+## Render deployment follow-up
+
+- The owner signed into Render and explicitly approved copying the server-only Supabase key into its private environment settings. One Free Docker web service deployed commit `e49c7e7a4f47ab65d7405671c65e1b99b7d4c1b0` successfully at https://cleardrop-shrutivan17.onrender.com. No payment details, paid database or shared Ring token were added.
+- Supabase's site URL is now the exact Render origin. Its exact `/auth/confirm` callback was added without removing the existing Railway and local callbacks.
+- Anonymous HTTP checks on Render passed for the seven public page/manifest routes. Private Ring endpoints returned 401, `/doorway` redirected to account entry, cross-site account writes returned 403, and public signup remained closed with 503.
+- The hosted browser ran all three measured generated-video cases successfully, showing 79 sampled frames at completion. This is controlled processing evidence, not a fresh Ring stream or a physical-camera accuracy test.
+- Owner email login, confirmation/recovery-email delivery and actual Ring playback were not exercised during this deployment check. Free hosting sleeps after inactivity, may restart, and has usage quotas; it does not guarantee availability or preserve in-memory Ring sessions.

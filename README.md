@@ -6,6 +6,8 @@ ClearDrop is a local-first doorway-access prototype: a delivery photo tells you 
 ## Start
 Verified with Node.js 24.19.0 and pnpm 11.19.0.
 
+Try the [public website](https://cleardrop-shrutivan17.onrender.com) without an account or Ring token. Free hosting may take about a minute to wake after inactivity. Personal Ring preview still requires your own confirmed account and current token.
+
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
