@@ -16,6 +16,8 @@ The project retains the Amazon Ring API Hello World starter and its MIT attribut
 - Keep demos honest: `/demo` uses scripted observations; `/test` uses generated video through the production monitor. Neither stands in for actual Ring playback or semantic accuracy.
 - Isolate credentials: public demonstrations require no Ring token. Private Ring routes independently verify the account, bind sessions to that account, and prohibit fallback to the server owner's token.
 - Measure fresh evidence: camera-test reports count only new samples within each run, require phase coverage, reject observation gaps/reference resets, and use the detector sampling clock rather than jittery UI callback delivery.
+- Separate sensor observations from human workflow: acknowledgement does not resolve a delivery review. Closure requires an explicit removal check and a fresh empty-reference view; a missing camera preserves unknown evidence.
+- Persist only opted-in metadata: an ordered bounded queue, idempotent identical retries, optimistic versions, verified APIs and owner RLS provide layered review storage without uploading footage. Database transition guards also reject direct invalid updates. This records user reports, not authenticated physical evidence.
 
 ## Evidence and failures
 
@@ -34,6 +36,10 @@ The latest refactor adds one shared browser adapter, atomic bounded-frame valida
 - `lib/phone-camera.ts`: foreground camera lifecycle and track cleanup.
 - `app/doorway/page.tsx` and `app/api/`: private Ring preview workflow and server boundaries.
 - `lib/inference-evidence.ts`: rejection of stale experimental model evidence.
+- `lib/delivery-review.ts`: explicit acknowledgement/removal workflow and strict metadata boundary.
+- `lib/review-sync.ts`: ordered writes, visible failure, explicit retry, bounded overflow and disposal.
+- `lib/review-notifier.ts`: opt-in foreground desktop notification attempts with honest failure outcomes.
+- `app/api/reviews/route.ts` and `supabase/`: independently verified owner APIs, RLS, transition constraints and rollback-only live policy checks.
 - `docs/account-security.md`: account setup and remaining release controls.
 
 ## Remaining work

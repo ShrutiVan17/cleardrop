@@ -33,4 +33,10 @@ The approved migration was installed through the existing Supabase project’s S
 
 Local production browser checks passed the already-present manual report → acknowledgement → removal-check flow. Closure stayed disabled without an empty reference, remained open after reference restoration, reset visual confirmation when the view changed, and closed only after a new explicit confirmation with fresh video. All three measured generated-video cases passed; the resulting review remained open with unknown evidence after video loss. Generated tests did not request desktop notification permission or offer account sync.
 
-Hosted review UI, fresh Ring playback, actual OS notification delivery and private review saving from a fresh Ring feed require separate checks; do not infer them from the SQL checks.
+Fresh Ring playback, actual OS notification delivery and private review saving from a fresh Ring feed require separate checks; do not infer them from the SQL checks.
+
+GitHub [Verify ClearDrop run 37169401058](https://github.com/ShrutiVan17/cleardrop/actions/runs/37169401058) passed installation, all deterministic tests, type checking and production compilation for commit `e067fc2`. Local public-route checks passed with the new review endpoint restricted to signed-in accounts. The separate Pages workflow does not host this server application.
+
+Render deployed `e067fc2` successfully on its existing free service. Hosted anonymous route/access checks passed, including 401 for private review metadata. The existing owner session remained signed in after deployment, and Account → Private review history loaded the empty owner history without an error. This verifies authenticated reads and installed storage, not a real-camera write or notification delivery.
+
+Hosted generated-video processing passed all three measured cases with 82 sampled frames. The review remained open with unknown evidence after video loss. Acknowledgement and starting the removal check did not enable closure, even with the visual-check box ticked. The private account history remained empty after the public test. Actual OS notification delivery, fresh physical Ring verification and live-camera metadata writes remain unverified.
