@@ -94,3 +94,66 @@ test('only an explicit removal check with a valid empty reference resolves the r
   const next = monitor.calibrate(frame(), zone, 1250, check)
   assert.equal(next.ready, true); assert.equal(next.reportedParcel, false); assert.equal(next.unresolved, false)
 })
+
+test('malformed calibration is atomic and cannot erase a human report', () => {
+  const monitor = new ChangeMonitor(); monitor.reportParcel()
+  assert.throws(() => monitor.calibrate({ ...frame(), data: new Uint8ClampedArray(4) }, zone, 0, { checkedEmpty: true, reportedParcelRemoved: true }), /bounded camera frame/)
+  assert.equal(monitor.snapshot().reportedParcel, true)
+  assert.equal(monitor.receipt().referenceVersion, 0)
+})
+
+test('broken current pixels pause rather than fabricate zero change or removal', () => {
+  const monitor = new ChangeMonitor(); monitor.calibrate(frame(), zone, 0, { checkedEmpty: true })
+  scan(monitor, 'inside', 250, 3250)
+  const before = monitor.snapshot()
+  const paused = monitor.observe({ ...frame(), data: new Uint8ClampedArray(4) }, 3750)
+  assert.equal(paused.ready, false); assert.equal(paused.unresolved, true)
+  assert.equal(paused.pauseReason, 'invalid-frame'); assert.equal(paused.scans, before.scans)
+})
+
+test('frame dimension changes invalidate the reference without resolving an alert', () => {
+  const monitor = new ChangeMonitor(); monitor.calibrate(frame(), zone, 0, { checkedEmpty: true })
+  scan(monitor, 'inside', 250, 3250)
+  assert.equal(monitor.observe({ width: 50, height: 50, data: new Uint8ClampedArray(50 * 50 * 4) }, 3750).pauseReason, 'invalid-frame')
+  assert.equal(monitor.snapshot().unresolved, true)
+})
+
+test('receipt records factual transitions, distinguishing human, pixels and failures', () => {
+  const monitor = new ChangeMonitor(); monitor.calibrate(frame(), zone, 0, { checkedEmpty: true })
+  scan(monitor, 'inside', 250, 3250); scan(monitor, 'empty', 3750, 2250)
+  monitor.pause('page-hidden', 6500); monitor.reportParcel()
+  const receipt = monitor.receipt('ring')
+  assert.equal(receipt.source, 'ring'); assert.equal(receipt.schema, 'cleardrop.monitor.v1')
+  for (const [kind, evidence] of [['reference-saved', 'human'], ['change-persisted', 'pixels'], ['reference-restored', 'pixels'], ['monitor-paused', 'system'], ['parcel-reported', 'human']]) {
+    assert.ok(receipt.events.some(event => event.kind === kind && event.evidence === evidence), kind)
+  }
+  assert.equal(receipt.observation.unresolved, true)
+  assert.equal(receipt.events.find(event => event.reason === 'page-hidden').unresolved, false)
+})
+
+test('duplicate samples and repeated pauses do not invent history events', () => {
+  const monitor = new ChangeMonitor(); monitor.calibrate(frame(), zone, 0, { checkedEmpty: true })
+  for (let i = 0; i < 100; i++) monitor.observe(frame(), 250)
+  assert.equal(monitor.receipt().events.length, 1)
+  monitor.pause('frame-stalled', 2000); monitor.pause('frame-stalled', 2250)
+  assert.equal(monitor.receipt().events.length, 2)
+})
+
+test('receipts are bounded, detached, and never serialize private inputs or pixels', () => {
+  const monitor = new ChangeMonitor()
+  for (let i = 0; i < 80; i++) monitor.calibrate(frame(), zone, i * 250, { checkedEmpty: true })
+  const receipt = monitor.receipt('private-device-name')
+  assert.equal(receipt.source, 'unknown'); assert.equal(receipt.events.length, 64); assert.equal(receipt.droppedEvents, 16)
+  assert.equal(receipt.events[0].sequence, 17); assert.equal(receipt.events[63].referenceVersion, 80)
+  const output = JSON.stringify(receipt)
+  assert.doesNotMatch(output, /private-device-name|"data"|"token"|"deviceId"|"email"|"password"/)
+  receipt.events[0].kind = 'not-real'; receipt.observation.unresolved = true
+  assert.equal(monitor.receipt().events[0].kind, 'reference-saved'); assert.equal(monitor.snapshot().unresolved, false)
+})
+
+test('sample gaps have a distinct diagnosable reason and retain unresolved evidence', () => {
+  const monitor = new ChangeMonitor(); monitor.calibrate(frame(), zone, 0, { checkedEmpty: true })
+  scan(monitor, 'inside', 250, 3250)
+  assert.equal(monitor.observe(frame(), 6000).pauseReason, 'sample-gap')
+  assert.equal(monitor.receipt().events.at(-1).unresolved, true)
+})

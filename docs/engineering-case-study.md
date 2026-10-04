@@ -25,7 +25,10 @@ OWL-ViT missed a visible parcel in an evaluated Ring clip. Grounding DINO loaded
 
 ## Code map
 
+The latest refactor adds one shared browser adapter, atomic bounded-frame validation, source-labelled local decision receipts, and read-only automated test/typecheck/build verification. Malformed frames cannot fabricate a zero-change result. The UI presents one engine snapshot instead of independently updating monitoring booleans. [Architecture decisions](architecture-decisions.md) explain implemented choices and tradeoffs.
+
 - `lib/change-monitor.ts`: shared calibrated pixel monitor and interruption behavior.
+- `app/hooks/useChangeMonitor.ts`: shared frame-clock, capture and visibility adapter.
 - `lib/camera-test-evidence.ts`: independent per-run evidence and JSON report.
 - `app/test/page.tsx`: generated moving video, real browser decoding, measured scenarios.
 - `lib/phone-camera.ts`: foreground camera lifecycle and track cleanup.

@@ -1,6 +1,17 @@
 export type Zone = { x: number; y: number; w: number; h: number }
 export type Frame = { data: Uint8ClampedArray; width: number; height: number }
 
+// Monitoring uses small RGBA samples, not arbitrary full-resolution uploads.
+export const MAX_FRAME_PIXELS = 640 * 480
+export function validFrame(value: unknown): value is Frame {
+  if (!value || typeof value !== 'object') return false
+  const frame = value as Frame
+  return Number.isInteger(frame.width) && Number.isInteger(frame.height) &&
+    frame.width > 0 && frame.height > 0 && frame.width * frame.height <= MAX_FRAME_PIXELS &&
+    ArrayBuffer.isView(frame.data) && Object.prototype.toString.call(frame.data) === '[object Uint8ClampedArray]' &&
+    frame.data.length === frame.width * frame.height * 4
+}
+
 export function validZone(value: unknown): value is Zone {
   if (!value || typeof value !== 'object') return false
   const z = value as Zone
@@ -11,7 +22,7 @@ export function validZone(value: unknown): value is Zone {
 // Background comparison, not semantic package recognition. Compensates for
 // uniform exposure changes; shadows, camera motion and people can still trigger it.
 export function compareZone(reference: Frame, current: Frame, zone: Zone) {
-  if (reference.width !== current.width || reference.height !== current.height || !validZone(zone)) {
+  if (!validFrame(reference) || !validFrame(current) || reference.width !== current.width || reference.height !== current.height || !validZone(zone)) {
     throw new Error('Reference frame or zone does not match')
   }
   const { width, height } = current

@@ -41,6 +41,8 @@ Never commit the token. Renew it when it expires. Browser Ring connections use a
 - Doorway-zone editing, local calibrated scene-change detection, persistence and human confirmation.
 - Optional experimental parcel AI in a Web Worker.
 - Unknown-first decision rules: a disconnect cannot verify removal.
+- Shared pure monitoring engine and browser adapter for Ring, phone and controlled tests; invalid or stale frames pause analysis.
+- Source-labelled review-history export under More options: human confirmations, pixel transitions and interruption reasons, with no video or credentials.
 - Local video recording/replay, raw predictions and JSON evaluation reports.
 - Simple navigation; advanced controls tucked away without removing functionality.
 
@@ -70,8 +72,10 @@ Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original
 ## Documentation
 - [Product walkthrough](docs/walkthrough.md)
 - [Architecture and security boundaries](docs/architecture.md)
+- [Architecture decisions and tradeoffs](docs/architecture-decisions.md)
 - [Detailed instructions](docs/cleardrop.md)
-- [Current verification record](docs/verification-2026-10-02.md)
+- [Current verification record](docs/verification-2026-10-03.md)
+- [Already-present-parcel setup checks](docs/verification-2026-10-02.md)
 - [Earlier integration and deployment checks](docs/verification-2026-10-01.md)
 - [Engineering case study](docs/engineering-case-study.md)
 - [Free Render hosting](docs/render-hosting.md)

@@ -3,57 +3,51 @@
 import { RefObject, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { validZone, Zone } from '@/lib/obstruction'
-import { ChangeMonitor, ChangeObservation } from '@/lib/change-monitor'
+import { CameraSource, ChangeObservation, PauseReason } from '@/lib/change-monitor'
+import { useChangeMonitor } from '../hooks/useChangeMonitor'
 import { usePackageDetection } from '../hooks/usePackageDetection'
 
 type Entry = { id: number; time: string; kind: string; detail: string }
 const defaultZone: Zone = { x: .3, y: .5, w: .4, h: .4 }
 
-export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation }: { videoRef: RefObject<HTMLVideoElement>; active: boolean; deviceId?: string; fixedZone?: Zone; onObservation?: (observation: ChangeObservation) => void }) {
+export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation, source = 'unknown' }: { videoRef: RefObject<HTMLVideoElement>; active: boolean; deviceId?: string; fixedZone?: Zone; source?: CameraSource; onObservation?: (observation: ChangeObservation) => void }) {
   const [zone, setZone] = useState<Zone>(defaultZone)
   const [editing, setEditing] = useState(false)
-  const [ready, setReady] = useState(false)
-  const [ratio, setRatio] = useState(0)
-  const [blocked, setBlocked] = useState(false)
-  const [unresolved, setUnresolved] = useState(false)
-  const [reportedParcel, setReportedParcel] = useState(false)
   const [emptyChecked, setEmptyChecked] = useState(false)
   const [error, setError] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [fit, setFit] = useState({ left: 0, top: 0, width: 0, height: 0 })
-  const monitor = useRef(new ChangeMonitor())
-  const lastFrameAt = useRef(0)
-  const observationCallback = useRef(onObservation)
-  observationCallback.current = onObservation
-  const lastTime = useRef(-1)
   const drag = useRef<{x: number; y: number} | null>(null)
   const overlay = useRef<HTMLDivElement>(null)
-  const frameCanvas = useRef<HTMLCanvasElement | null>(null)
   const seq = useRef(0)
+  const monitoring = useChangeMonitor({ videoRef, active, deviceId, zone, editing, source, onObservation })
+  const { ready, ratio, blocked, unresolved, reportedParcel } = monitoring.observation
+  const previousBlocked = useRef(false)
   const packages = usePackageDetection(videoRef, active, zone, editing)
   useEffect(() => {
     if (packages.alert) log('AI parcel overlap', 'Repeated model detections overlap the doorway zone. Visually verify before acting.')
   }, [packages.alert])
+  useEffect(() => {
+    if (blocked && !previousBlocked.current) log('Possible obstruction', 'A persistent change appeared inside the doorway zone. Review the video.')
+    if (ready && !blocked && previousBlocked.current) log('Reference restored', 'The view looks similar to the saved reference. This does not verify walking clearance.')
+    previousBlocked.current = blocked
+  }, [blocked, ready])
 
   function log(kind: string, detail: string) {
     setEntries(items => [{ id: ++seq.current, time: new Date().toLocaleTimeString(), kind, detail }, ...items].slice(0, 20))
   }
-  function reset() {
-    const paused = monitor.current.pause(); lastTime.current = -1
-    setReady(false); setRatio(0); setBlocked(false); setReportedParcel(!!paused.reportedParcel); setUnresolved(paused.unresolved); setEmptyChecked(false); setError('')
+  function reset(reason: PauseReason = 'camera-paused') {
+    monitoring.pause(reason); setEmptyChecked(false); setError('')
   }
   useEffect(() => {
-    monitor.current = new ChangeMonitor()
-    reset()
+    setEmptyChecked(false); setError(''); previousBlocked.current = false
     setEntries([])
-    setUnresolved(false)
     try {
       const value = JSON.parse(localStorage.getItem(`cleardrop.zone.${deviceId || 'default'}`) || 'null')
       setZone(fixedZone || (validZone(value) ? value : defaultZone))
     } catch { setZone(fixedZone || defaultZone) }
   }, [deviceId])
-  useEffect(() => { if (!active) { reset(); setEditing(false) } }, [active])
-  useEffect(() => { observationCallback.current?.(monitor.current.snapshot()) }, [active, ready, blocked, unresolved, reportedParcel])
+  useEffect(() => { if (!active) { setEmptyChecked(false); setError(''); setEditing(false) } }, [active])
 
   useEffect(() => {
     const video = videoRef.current
@@ -70,62 +64,17 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
     return () => { observer.disconnect(); video.removeEventListener('loadedmetadata', resize) }
   }, [videoRef, active])
 
-  function capture() {
-    const video = videoRef.current
-    if (!active || !video || video.readyState < 2 || !video.videoWidth) throw new Error('Start the live video first.')
-    const canvas = frameCanvas.current || (frameCanvas.current = document.createElement('canvas'))
-    canvas.width = 240; canvas.height = Math.max(1, Math.round(240 * video.videoHeight / video.videoWidth))
-    const context = canvas.getContext('2d', { willReadFrequently: true })!
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
-    return context.getImageData(0, 0, canvas.width, canvas.height)
-  }
-
   function reportParcel() {
-    const sample = monitor.current.reportParcel()
-    setReady(false); setBlocked(false); setRatio(0); setReportedParcel(true); setUnresolved(sample.unresolved); setEmptyChecked(false); setError('')
+    monitoring.reportParcel(); setEmptyChecked(false); setError('')
     log('Parcel reported by viewer', 'An already-visible parcel was reported manually. No occupied reference was saved. Removal needs an explicit visual check.')
   }
 
   function calibrate(reportedParcelRemoved = false) {
-    try {
-      if (!validZone(zone)) throw new Error('Mark a doorway area inside the video first.')
-      monitor.current.calibrate(capture(), zone, performance.now(), { checkedEmpty: emptyChecked, reportedParcelRemoved }); lastFrameAt.current = performance.now()
-      setReady(true); setBlocked(false); setUnresolved(false); setReportedParcel(false); setEmptyChecked(false); setError(''); setRatio(0)
+    if (monitoring.calibrate(emptyChecked, reportedParcelRemoved)) {
+      setEmptyChecked(false); setError('')
       log('Reference saved', 'Current frame marked as an empty doorway. Monitoring started.')
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not capture reference') }
+    }
   }
-
-  useEffect(() => {
-    if (!active || !ready || editing) return
-    const timer = setInterval(() => {
-      const video = videoRef.current
-      const at = performance.now()
-      if (!video || video.paused || video.currentTime === lastTime.current) {
-        if (at - lastFrameAt.current > 1500) {
-          monitor.current.pause(); setReady(false); setBlocked(false)
-          setError('Video is not updating. Check the camera, then save a new empty reference.')
-        }
-        return
-      }
-      lastFrameAt.current = at
-      lastTime.current = video.currentTime
-      try {
-        const previous = monitor.current.snapshot()
-        const next = monitor.current.observe(capture(), at)
-        observationCallback.current?.(next)
-        setRatio(next.ratio); setBlocked(next.blocked); setUnresolved(next.unresolved)
-        if (!next.ready) { setReady(false); setError('Video was interrupted. Check the area and save a new empty reference.'); return }
-        if (next.blocked && !previous.blocked) {
-          setUnresolved(true)
-          log('Possible obstruction', 'A persistent change appeared inside the doorway zone. Review the video.')
-        } else if (!next.blocked && previous.blocked) {
-          setUnresolved(false)
-          log('Change cleared', 'The doorway looks similar to the saved reference again.')
-        }
-      } catch (e) { monitor.current.pause(); setBlocked(false); setError(e instanceof Error ? e.message : 'Analysis failed'); setReady(false) }
-    }, 250)
-    return () => clearInterval(timer)
-  }, [active, ready, editing, zone, videoRef])
 
   function point(event: React.PointerEvent) {
     const rect = overlay.current!.getBoundingClientRect()
@@ -157,16 +106,19 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
         }}>Save area</button> : <>
           {!ready && <button className="cd-button cd-primary" disabled={!emptyChecked} onClick={() => calibrate(reportedParcel)}>{reportedParcel ? 'Parcel removed — start watching' : 'Area is empty — start watching'}</button>}
           {!ready && !reportedParcel && <button className="cd-button" onClick={reportParcel}>A parcel is already here</button>}
-          {!fixedZone && <button className="cd-button" onClick={() => { reset(); setEditing(true) }}>Change doorway area</button>}
+          {!fixedZone && <button className="cd-button" onClick={() => { reset('area-changed'); setEditing(true) }}>Change doorway area</button>}
         </>}
       </div>}
       {editing && <fieldset className="mt-4"><legend className="text-sm mb-2">Area position (percent of video)</legend><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{(['x','y','w','h'] as const).map(key => <label key={key} className="text-sm">{{x:'Left',y:'Top',w:'Width',h:'Height'}[key]}<input className="cd-input" type="number" min={key==='w'||key==='h'?3:0} max={100} value={Math.round(zone[key]*100)} onChange={e => { const v=Math.max(0,Math.min(1,Number(e.target.value)/100)); setZone(z => { const n={...z,[key]:v}; n.w=Math.min(n.w,1-n.x); n.h=Math.min(n.h,1-n.y); return n }) }} /></label>)}</div></fieldset>}
       {blocked && <div role="alert" className="cd-review-alert"><p>A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?</p><div className="flex flex-wrap gap-2 mt-3"><button className="cd-button" onClick={reportParcel}>Yes, there’s a parcel</button><button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
       {packages.status!=='off' && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
-      {error && <p role="alert" className="cd-error mt-3">{error}</p>}
+      {(error || monitoring.error) && <p role="alert" className="cd-error mt-3">{error || monitoring.error}</p>}
       <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review. This does not measure parcel size or physical walking clearance.</p>
       <details className="cd-details mt-4">
         <summary>More options</summary>
+        <h3 className="font-semibold mt-3">Review history</h3>
+        <p className="cd-help">Download this session’s decisions and their source: your confirmation, pixel changes, or a camera interruption. No video, tokens or account details are included. This is local history, not a tamper-proof audit log.</p>
+        <button className="cd-button mt-3" onClick={monitoring.exportReceipt}>Download review history</button>
         {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><label className="flex gap-2 my-3"><input type="checkbox" checked={emptyChecked} onChange={e => setEmptyChecked(e.target.checked)} /><span>I visually checked that the marked area is empty before replacing the reference.</span></label><button className="cd-button" disabled={editing || !emptyChecked} onClick={() => calibrate()}>Save a new empty reference</button></div>}
         <h3 className="font-semibold mt-3">Experimental parcel recognition</h3>
         <p className="cd-help">This model missed the parcel in our initial Ring test. It can miss or misidentify objects. No detection does not mean the doorway is clear.</p>

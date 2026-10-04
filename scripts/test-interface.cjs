@@ -78,6 +78,18 @@ test('camera setup offers a manual existing-parcel path and gates empty calibrat
  assert.match(source,/This is your visual report, not an AI detection/)
  assert.match(source,/reportedParcelRemoved/)
 })
+
+test('monitoring uses one shared adapter and keeps review-history export in advanced controls',()=>{
+ const {ClearDrop}=load('app/components/ClearDrop.tsx')
+ const html=render(React.createElement(ClearDrop,{videoRef:{current:null},active:false}))
+ assert.doesNotMatch(html.split('<details')[0],/Download review history/)
+ assert.match(html,/Download review history/);assert.match(html,/not a tamper-proof audit log/)
+ const source=fs.readFileSync(path.join(root,'app/components/ClearDrop.tsx'),'utf8')
+ assert.match(source,/useChangeMonitor/);assert.doesNotMatch(source,/setReady|setBlocked|setUnresolved|setInterval/)
+ const adapter=fs.readFileSync(path.join(root,'app/hooks/useChangeMonitor.ts'),'utf8')
+ assert.match(adapter,/visibilitychange/);assert.match(adapter,/clearInterval/);assert.match(adapter,/frame-stalled/)
+ assert.doesNotMatch(adapter,/fetch\(|localStorage|sessionStorage/)
+})
 test('primary and secondary text colors meet normal-text contrast',()=>{
   function luminance(hex){const rgb=hex.match(/\w\w/g).map(c=>parseInt(c,16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]}
   for(const [foreground,background] of [['ffffff','126b58'],['526761','f7f8f4'],['203a36','ffffff'],['805319','fff2dc']]){

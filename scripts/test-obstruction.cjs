@@ -7,7 +7,7 @@ const ts = require('typescript')
 const source = fs.readFileSync(path.join(__dirname, '../lib/obstruction.ts'), 'utf8')
 const context = { exports: {} }
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context)
-const { compareZone, validZone, advanceDetection, emptyPersistence } = context.exports
+const { compareZone, validFrame, validZone, advanceDetection, emptyPersistence } = context.exports
 const zone = { x: .25, y: .25, w: .5, h: .5 }
 function frame(value = 50) {
   const data = new Uint8ClampedArray(100 * 100 * 4)
@@ -37,6 +37,14 @@ test('detects an object inside the zone but ignores objects outside', () => {
 })
 test('rejects mismatched reference dimensions', () => {
   assert.throws(() => compareZone(frame(), { ...frame(), width: 99 }, zone))
+})
+
+test('frame contracts reject truncated, invalid or unbounded RGBA samples', () => {
+  assert.equal(validFrame(frame()), true)
+  for (const value of [null, { ...frame(), width: 0 }, { ...frame(), height: NaN }, { ...frame(), width: 1.5 },
+    { ...frame(), data: new Uint8ClampedArray(4) }, { ...frame(), data: new Uint8Array(40000) },
+    { width: 10000, height: 10000, data: new Uint8ClampedArray(4) }]) assert.equal(validFrame(value), false)
+  assert.throws(() => compareZone(frame(), { ...frame(), data: new Uint8ClampedArray(4) }, zone))
 })
 test('requires three seconds and clears after two seconds', () => {
   let state = advanceDetection(emptyPersistence(), .3, 0)

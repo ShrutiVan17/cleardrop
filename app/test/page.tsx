@@ -136,7 +136,7 @@ export default function CameraTestPage() {
         {error && <p role="alert" className="cd-error">{error}</p>
         }
       </section>
-      <ClearDrop key={runId} videoRef={videoRef} active={active} deviceId="controlled-video-test" fixedZone={FIXTURE_ZONE} onObservation={sample => { observation.current = sample; evidence.current?.observe(sample, performance.now()); setSeen(sample) }} />
+      <ClearDrop key={runId} videoRef={videoRef} active={active} deviceId="controlled-video-test" source="generated-video" fixedZone={FIXTURE_ZONE} onObservation={sample => { observation.current = sample; evidence.current?.observe(sample, performance.now()); setSeen(sample) }} />
       <p className="cd-help mt-5"><a className="cd-text-link" href="/phone">Test a physical box with your phone</a> · <a className="cd-text-link" href="/doorway">Connect Ring preview</a> · <a className="cd-text-link" href="/demo">Illustrated walkthrough</a></p>
       <footer className="cd-footer">A passing controlled test verifies processing and state transitions only. Physical camera quality and Ring playback must be checked separately. Always check the doorway yourself.</footer>
     </main></>

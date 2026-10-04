@@ -90,7 +90,7 @@ export default function Dashboard() {
             </div>
             {streamError && <p className="cd-error p-4" role="alert">{streamError}</p>}
           </section>
-          <ClearDrop videoRef={videoRef} active={streamActive} deviceId={deviceId} />
+          <ClearDrop videoRef={videoRef} active={streamActive} deviceId={deviceId} source="ring" />
           <details className="cd-details cd-extra-tools"><summary>Renew or disconnect Ring</summary><RingConnection onConnected={() => { void stopStream(); setRetry(value => value + 1) }} /><button className="cd-button mt-3" onClick={async () => { await stopStream(); const response = await fetch('/api/ring/connect', { method: 'DELETE' }); if (response.ok) setRetry(value => value + 1); else setSetupError('Could not disconnect Ring. Please reload and try again.') }}>Disconnect this browser</button></details>
         </>}
 
