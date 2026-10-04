@@ -74,5 +74,10 @@ export function useChangeMonitor({ videoRef, active, deviceId, zone, editing, so
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'cleardrop-review-history.json'; anchor.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
-  return { observation, error, pause, calibrate, reportParcel, exportReceipt }
+  function isFresh() {
+    const video = videoRef.current
+    return active && !document.hidden && !!video && !video.paused && video.readyState >= 2 &&
+      engine.current.snapshot().ready && performance.now() - lastFrameAt.current <= 1500
+  }
+  return { observation, error, pause, calibrate, reportParcel, exportReceipt, isFresh }
 }

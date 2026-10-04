@@ -19,7 +19,7 @@ This is an implemented, disabled-by-default foundation, not a security certifica
 - State-changing account calls reject cross-site requests. Passwords are bounded at 12–128 characters. Auth responses are private/no-store; errors do not echo provider messages or account existence on recovery.
 - Account POST calls have a single-process backstop: at most eight attempts per action/email and 60 total per minute. Confirmation exchanges are bounded too. This is not distributed throttling, can reset on restart, and does not replace provider protection or CAPTCHA.
 - Ring sessions can be bound to a verified account ID. Other accounts cannot use that token. Account mode never falls back to the server owner's Ring environment credentials. Sign-in/out clears the browser's Ring connection.
-- Account deletion requires current-password reauthentication and removes the Supabase identity. The app stores no cloud doorway/video data in this version. Browser zone settings on other devices and provider operational logs are separate retention concerns.
+- Account deletion requires current-password reauthentication and removes the Supabase identity and its owned review metadata by foreign-key cascade. Opt-in delivery reviews store statuses/timestamps only, never video, frames, device IDs or Ring tokens. Browser zone settings on other devices and provider operational logs are separate retention concerns. See [delivery-review setup and limits](delivery-reviews.md).
 - Camera permissions are limited to this origin; microphone/geolocation are disabled. Frame embedding is blocked. CSP permits inline code/styles needed by the current Next.js build; nonce-based CSP and further hardening remain follow-up work.
 
 ## Required before store release

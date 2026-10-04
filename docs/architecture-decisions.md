@@ -30,4 +30,18 @@ Status: implemented; real-world evaluation pending.
 
 OWL-ViT missed a visible Ring parcel; Grounding DINO timed out on first synthetic inference. Neither supports reliable recognition claims. Optional worker inference remains separate from scene-change review and explicit viewer reports.
 
-Before expanding claims: evaluate permissioned labelled positive/negative clips across lighting, scale and viewpoints; report misses, false positives, latency and failures separately. Deterministic tests are not perception benchmarks. Consumer Ring OAuth, notifications, native distribution and distributed abuse controls are separate release gates.
+Before expanding claims: evaluate permissioned labelled positive/negative clips across lighting, scale and viewpoints; report misses, false positives, latency and failures separately. Deterministic tests are not perception benchmarks. Consumer Ring OAuth, background/caregiver notifications, native distribution and distributed abuse controls are separate release gates.
+
+## ADR 005 — Human review separate from sensor state
+
+Status: implemented.
+
+A pixel restoration does not prove removal and acknowledging a warning does not close it. The review state machine explicitly separates acknowledgement, removal checking and closure. Camera loss changes the review view to unknown without resolving it. Optional foreground desktop notifications are attempts, not delivery receipts. Generated tests never ask for notification permission.
+
+## ADR 006 — Opt-in metadata persistence, no cloud footage
+
+Status: implemented; database installation and live checks recorded separately.
+
+Ring users can opt in before a new review. An ordered, bounded client queue sends strict status/timestamp metadata through independently authenticated APIs. Owner RLS and a database transition trigger provide a second boundary. Consecutive versions detect competing updates; identical retries are idempotent. Failures stay visible and retries are explicit. Public demonstrations remain local. This is not authenticated event sourcing, caregiver sharing or a sensor-proof ledger.
+
+Tradeoff: no device IDs means cloud history cannot automatically choose a camera. Resuming requires explicit camera selection and a fresh reference. A 200-row cap bounds account storage; users can delete closed reviews or their account. Automatic retention and distributed abuse controls remain release work.

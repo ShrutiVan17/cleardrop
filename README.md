@@ -43,13 +43,16 @@ Never commit the token. Renew it when it expires. Browser Ring connections use a
 - Unknown-first decision rules: a disconnect cannot verify removal.
 - Shared pure monitoring engine and browser adapter for Ring, phone and controlled tests; invalid or stale frames pause analysis.
 - Source-labelled review-history export under More options: human confirmations, pixel transitions and interruption reasons, with no video or credentials.
+- Delivery review flow: acknowledge, check removal, then explicitly confirm a fresh empty view. Restored pixels never close a review automatically.
+- Optional desktop notification attempts while the page is open. Unsupported or denied notifications fall back to on-page review.
+- Opt-in private account sync for Ring reviews with row-level owner policies, consecutive-version checks and status-only storage. Public tests remain local; Account settings show saved history and offer confirmed deletion of closed reviews.
 - Local video recording/replay, raw predictions and JSON evaluation reports.
 - Simple navigation; advanced controls tucked away without removing functionality.
 
 ## Important limitations
 This is an experimental prototype, **not a safety system**. Scene change is not parcel recognition. OWL-ViT missed the visible parcel in our Ring test; Grounding DINO loaded but timed out on its first synthetic inference. Both remain experimental. Read the [evaluation evidence](docs/sandbox-evaluation.md).
 
-No remote caregiver notifications or background monitoring after closing the page are implemented. Activity and captured clips are memory-only; zone coordinates use local storage. Model weights/runtime files are downloaded when enabled; frames are not sent to a recognition service.
+No remote caregiver notifications or background monitoring after closing the page are implemented. Activity and captured clips are memory-only; zone coordinates use local storage. Only explicitly account-synced review metadata persists in Supabase, with a 200-review cap and manual deletion rather than automatic expiry. Model weights/runtime files are downloaded when enabled; frames are not sent to a recognition service.
 
 Local commands bind to **127.0.0.1**. The [Railway deployment](docs/hosting.md) supports either a private owner preview or explicit public-demo mode. The latter exposes only token-free demonstrations and account endpoints; Ring routes still require verified account access and never fall back to the server owner's token. Inherited webhooks remain disabled in hosted mode. Durable consumer Ring OAuth and distributed abuse controls are not implemented; the inherited refresh-token workflow is not verified end-to-end.
 
@@ -73,6 +76,7 @@ Use `pnpm-lock.yaml` as the canonical lockfile; the npm lockfile in the original
 - [Product walkthrough](docs/walkthrough.md)
 - [Architecture and security boundaries](docs/architecture.md)
 - [Architecture decisions and tradeoffs](docs/architecture-decisions.md)
+- [Delivery review setup, privacy and failure policy](docs/delivery-reviews.md)
 - [Detailed instructions](docs/cleardrop.md)
 - [Current verification record](docs/verification-2026-10-03.md)
 - [Already-present-parcel setup checks](docs/verification-2026-10-02.md)

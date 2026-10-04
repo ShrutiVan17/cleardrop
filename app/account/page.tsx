@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react'
 import { Header } from '../components/Header'
+import { PrivateReviewHistory } from '../components/PrivateReviewHistory'
 
 export default function AccountPage() {
   const [configured, setConfigured] = useState(false)
@@ -56,6 +57,7 @@ export default function AccountPage() {
         {loading ? <p role="status">Checking account service…</p> : !configured ? <div className="cd-demo-notice"><strong>Setup required</strong><span>Email accounts are not activated. The current website is an owner preview, not a public account service.</span></div> : signedIn ? <>
           <p>Signed in as {signedIn}</p><div className="flex gap-3 mt-4"><a className="cd-button cd-primary" href="/phone">Use phone camera</a><a className="cd-button" href="/doorway">Connect Ring</a></div>
           <button className="cd-button mt-4" disabled={busy} onClick={() => void submit('signout')}>Sign out</button>
+          <PrivateReviewHistory />
           <details className="cd-details mt-5"><summary>Password and account deletion</summary><label>New password<input className="cd-input" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /></label><p className="cd-help">Use 12–128 characters. Password recovery requires a valid email link.</p><button className="cd-button" disabled={busy || password.length < 12} onClick={() => void submit('reset-password')}>Set new password</button>
             <form className="mt-5" onSubmit={e => void submit('delete', e)}><p className="cd-error">Deleting your account is permanent. Enter your current password to confirm. Local doorway settings on this browser will also be removed.</p><label>Current password<input className="cd-input" type="password" autoComplete="current-password" required minLength={12} maxLength={128} value={deletionPassword} onChange={e => setDeletionPassword(e.target.value)} /></label><button className="cd-button mt-3" disabled={busy || !deletion}>Permanently delete my account</button>{!deletion && <p className="cd-help">Deletion is not configured yet; this app is not ready for store release.</p>}</form>
           </details>

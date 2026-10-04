@@ -8,7 +8,10 @@ One Next.js deployment owns the server boundary. Supabase supplies verified acco
 Ring WebRTC ────┐
 Phone camera ───┼→ useChangeMonitor → ChangeMonitor → simple review UI
 Generated video ┘                         ├→ bounded decision receipt
-                                          └→ per-run test evidence
+                                          ├→ per-run test evidence
+                                          └→ DeliveryReview → acknowledgement → removal check
+                                                ├→ opt-in desktop notification attempt
+                                                └→ opt-in ordered metadata sync → verified API → owner RLS
 ```
 
 ```text
@@ -30,7 +33,7 @@ Labelled simulation → scripted detections → same pure AI decision rules
 
 ## What survives
 
-Doorway coordinates are stored per device in local storage. Reference frames, activity, inference state, decision history and captured clips are memory-only. Exported JSON exists only when requested. Supabase persists account data; there is no doorway-evidence database, multi-user sharing, cloud frame processing, background alerting or remote notification service.
+Doorway coordinates are stored per device in local storage. Reference frames, activity, inference state, pixel decision history and captured clips are memory-only. Exported JSON exists only when requested. Supabase persists account data and explicitly opted-in delivery-review metadata. No camera evidence, multi-user sharing, cloud frame processing, background alerting or remote notification service is implemented.
 
 Receipts retain 64 transitions with human/pixels/system attribution, reference versions, sequence numbers and a dropped-event count. They allowlist source categories and exclude pixels, accounts, credentials and device identifiers. This is inspectable local history, not signed or tamper-proof audit storage.
 
@@ -43,6 +46,8 @@ Frames must have positive integer dimensions, a complete RGBA buffer and at most
 An already-visible parcel can be explicitly reported by the viewer before calibration. This is a manual observation, not recognition evidence. It discards any reference and remains unresolved through interruption; ordinary reference replacement cannot erase it. A checked-empty confirmation is required for every calibration, plus an explicit reported-parcel removal check when applicable. Pixel changes cannot resolve a manually reported parcel while monitoring is paused.
 
 ## Security / production gate
+
+Delivery reviews are a separate pure state machine. Acknowledgement is not removal. Closure requires the removal-check phase, explicit human confirmation and a fresh usable empty-reference observation. Ordered bounded writes retain failed versions for explicit retry; queue overflow requires local export/reload rather than claiming dropped versions were saved. API routes use verified account identity with the publishable session client, not the service-role key. RLS independently restricts CRUD to the owner. A database trigger enforces initial state, immutable identity, consecutive versions and legal transitions. This records user reports, not trusted sensor evidence. Saved reviews do not contain device IDs and must be manually matched to the correct camera before resuming.
 
 Server credentials must never use NEXT_PUBLIC prefixes. WHEP session cleanup only follows permitted Ring session URLs; cross-origin bearer redirects are disabled. The default run commands bind to 127.0.0.1. Optional account mode uses provider-verified identities and binds Ring sessions to the signed-in account. Public-demo mode permits an explicit list of demonstration and account routes, not Ring API access. Missing account configuration fails closed for private routes; account mode never falls back to an owner's server token. Public signup is disabled until separately released. The inherited refresh-token flow requires further validation, and hosted webhooks remain disabled. Durable consumer OAuth, distributed abuse controls and retention policies are still required for a consumer rollout.
 

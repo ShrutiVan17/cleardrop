@@ -22,3 +22,15 @@ The first GitHub Verify ClearDrop run passed tests, typecheck and build on Linux
 ## Remaining gates
 
 No fresh Ring playback, permissioned real-world model benchmark, accuracy claim, public signup/email-delivery test, native-store release, notification delivery or full security certification is established by this refactor. Experimental recognition misses remain documented. Human empty-area confirmation can be mistaken. Session-local history is lost on reload and does not provide authenticated evidence or background monitoring.
+
+## Delivery-review implementation follow-up
+
+Added a separate acknowledgement/removal-check state machine, optional foreground desktop notification attempts, ordered bounded metadata sync and independently authenticated private review APIs. Public generated tests remain local and never request notification permission. Ring account sync is opt-in before a new review; saved metadata cannot restore a camera reference or automatically select a device. Account settings expose latest saved history and explicitly confirmed closed-review deletion. Privacy and retention limitations are documented.
+
+122 deterministic tests passed (15 added checks for review transitions, notification failures, ordered retry/disposal/overflow, metadata validation and owner-bound API behavior). Type checking and final production compilation passed. Anonymous local `/api/reviews` returned 401.
+
+The approved migration was installed through the existing Supabase project’s SQL Editor. Live SQL checks using `authenticated` and `anon` roles passed owner CRUD, cross-owner select/update/delete denial, foreign-owner insert denial, anonymous select denial, consecutive-version enforcement, acknowledgement ordering, immutable human reports and closed-state guards. All fixture users and records were rolled back. These database checks are distinct from mocked API tests.
+
+Local production browser checks passed the already-present manual report → acknowledgement → removal-check flow. Closure stayed disabled without an empty reference, remained open after reference restoration, reset visual confirmation when the view changed, and closed only after a new explicit confirmation with fresh video. All three measured generated-video cases passed; the resulting review remained open with unknown evidence after video loss. Generated tests did not request desktop notification permission or offer account sync.
+
+Hosted review UI, fresh Ring playback, actual OS notification delivery and private review saving from a fresh Ring feed require separate checks; do not infer them from the SQL checks.

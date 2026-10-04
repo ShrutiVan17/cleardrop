@@ -6,6 +6,8 @@ import { validZone, Zone } from '@/lib/obstruction'
 import { CameraSource, ChangeObservation, PauseReason } from '@/lib/change-monitor'
 import { useChangeMonitor } from '../hooks/useChangeMonitor'
 import { usePackageDetection } from '../hooks/usePackageDetection'
+import { useDeliveryReview } from '../hooks/useDeliveryReview'
+import { DeliveryReviewPanel } from './DeliveryReviewPanel'
 
 type Entry = { id: number; time: string; kind: string; detail: string }
 const defaultZone: Zone = { x: .3, y: .5, w: .4, h: .4 }
@@ -22,6 +24,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
   const seq = useRef(0)
   const monitoring = useChangeMonitor({ videoRef, active, deviceId, zone, editing, source, onObservation })
   const { ready, ratio, blocked, unresolved, reportedParcel } = monitoring.observation
+  const reviews = useDeliveryReview(monitoring.observation, source, deviceId)
   const previousBlocked = useRef(false)
   const packages = usePackageDetection(videoRef, active, zone, editing)
   useEffect(() => {
@@ -112,10 +115,22 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
       {editing && <fieldset className="mt-4"><legend className="text-sm mb-2">Area position (percent of video)</legend><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{(['x','y','w','h'] as const).map(key => <label key={key} className="text-sm">{{x:'Left',y:'Top',w:'Width',h:'Height'}[key]}<input className="cd-input" type="number" min={key==='w'||key==='h'?3:0} max={100} value={Math.round(zone[key]*100)} onChange={e => { const v=Math.max(0,Math.min(1,Number(e.target.value)/100)); setZone(z => { const n={...z,[key]:v}; n.w=Math.min(n.w,1-n.x); n.h=Math.min(n.h,1-n.y); return n }) }} /></label>)}</div></fieldset>}
       {blocked && <div role="alert" className="cd-review-alert"><p>A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?</p><div className="flex flex-wrap gap-2 mt-3"><button className="cd-button" onClick={reportParcel}>Yes, there’s a parcel</button><button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
       {packages.status!=='off' && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
+      <DeliveryReviewPanel flow={reviews} fresh={monitoring.isFresh} source={source} />
       {(error || monitoring.error) && <p role="alert" className="cd-error mt-3">{error || monitoring.error}</p>}
       <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review. This does not measure parcel size or physical walking clearance.</p>
       <details className="cd-details mt-4">
         <summary>More options</summary>
+        <h3 className="font-semibold mt-3">Delivery-review alerts</h3>
+        <p className="cd-help">The on-page review works without notification permission. Optional desktop alerts run only while this page is open. No background, email or caregiver delivery is implemented.</p>
+        {source!=='generated-video' && <button className="cd-button mt-3" onClick={reviews.noticesEnabled?reviews.disableNotices:()=>void reviews.enableNotices()}>{reviews.noticesEnabled?'Turn off desktop alerts':'Enable desktop alerts'}</button>}
+        <p className="cd-help" role="status">{source==='generated-video'?'Generated tests never request desktop notification permission.':reviews.notices}</p>
+        {source==='ring' && <><h3 className="font-semibold mt-3">Private review sync</h3><p className="cd-help">Enable before a new review starts. Only status, source category and timestamps are saved to your signed-in account—not video, Ring tokens or device IDs. Old reviews are not automatically linked to a camera.</p>
+          {!reviews.syncEnabled && <button className="cd-button mt-3" disabled={reviews.syncBusy || (!!reviews.review && reviews.review.phase!=='resolved')} onClick={()=>void reviews.enableSync()}>{reviews.syncBusy?'Checking review storage…':'Enable private account sync'}</button>}
+          <p className="cd-help" role="status">{reviews.syncState}</p>
+          {reviews.syncEnabled && <div className="flex flex-wrap gap-3 mt-3"><button className="cd-button" onClick={reviews.retrySync}>Retry unsaved reviews</button><button className="cd-button" onClick={reviews.disableSync}>Stop account sync</button></div>}
+          {reviews.history.filter(item=>item.source===source && item.id!==reviews.review?.id && item.phase!=='resolved').map(item=><div key={item.id} className="mt-3"><p className="cd-help">Open review · {new Date(item.createdAt).toLocaleString()} · {item.phase}. Select the correct camera and visually verify it before resuming.</p><button className="cd-button" disabled={!!reviews.review && reviews.review.phase!=='resolved'} onClick={()=>{reset();reviews.resume(item)}}>Resume this review on selected camera</button></div>)}
+        </>}
+        {reviews.history.length>0 && <button className="cd-button mt-3" onClick={reviews.download}>Download delivery reviews</button>}
         <h3 className="font-semibold mt-3">Review history</h3>
         <p className="cd-help">Download this session’s decisions and their source: your confirmation, pixel changes, or a camera interruption. No video, tokens or account details are included. This is local history, not a tamper-proof audit log.</p>
         <button className="cd-button mt-3" onClick={monitoring.exportReceipt}>Download review history</button>

@@ -15,6 +15,8 @@ async function get(path,options={}){return fetch(origin+path,{redirect:'manual',
     console.log('Camera access requires personal sign-in:',path)
   }
   const account=await get('/api/account');assert.equal(account.status,200)
+  const reviews=await get('/api/reviews');assert.equal(reviews.status,401);assert.equal(reviews.headers.get('www-authenticate'),null)
+  console.log('Private review metadata requires personal sign-in.')
   const info=await account.json();assert.equal(info.configured,true);assert.equal(info.email,null);assert.equal(info.signupAvailable,false)
   const crossSite=await get('/api/account',{method:'POST',headers:{origin:'https://attacker.example','Content-Type':'application/json'},body:'{"action":"signout"}'});assert.equal(crossSite.status,403)
   const signup=await get('/api/account',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify({action:'signup',email:'public-check@example.invalid',password:'test-only-not-used-password'})});assert.equal(signup.status,503)
