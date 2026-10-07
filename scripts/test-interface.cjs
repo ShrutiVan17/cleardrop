@@ -97,3 +97,15 @@ test('primary and secondary text colors meet normal-text contrast',()=>{
     assert.ok((values[0]+.05)/(values[1]+.05)>=4.5,`${foreground} on ${background}`)
   }
 })
+test('AI stays optional and separates suggestions from human-confirmed delivery reviews',()=>{
+ const {ClearDrop}=load('app/components/ClearDrop.tsx')
+ const html=render(React.createElement(ClearDrop,{videoRef:{current:null},active:false}))
+ assert.match(html,/Grounding DINO/);assert.match(html,/GPU if supported, otherwise CPU/)
+ assert.doesNotMatch(html.split('<details')[0],/Recognition model|Run on this device/)
+ const source=fs.readFileSync(path.join(root,'app/components/ClearDrop.tsx'),'utf8')
+ assert.match(source,/I see a parcel — start a review/)
+ assert.match(source,/packages.confirmEmpty\(emptyChecked,monitoring.isFresh\(\)\)/)
+ const hook=fs.readFileSync(path.join(root,'app/hooks/usePackageDetection.ts'),'utf8')
+ assert.match(hook,/if\(observation.persistent\)setReviewRequired\(true\)/)
+ assert.match(hook,/validDetectionBatch/);assert.match(hook,/!document.hidden/)
+})

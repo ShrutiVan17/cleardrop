@@ -19,8 +19,9 @@ Ring Playground / permissioned device
   → server-only Ring credential → device discovery + WHEP session proxy
   → browser RTCPeerConnection → actual decoded-frame health checks
       ├─ calibrated frame comparison → persistence → human review / activity
-      ├─ optional worker inference → parcel filtering → overlap / track policy
-      │     → unknown / observing / verifying / obstructed / checking-clear
+      ├─ optional Grounding DINO / OWL-ViT worker → WebGPU negotiation / CPU fallback
+      │     → validated predictions → overlap / monotonic track policy → latched AI suggestion
+      │     → viewer confirms parcel → existing human-report delivery-review workflow
       └─ opt-in video-only MediaRecorder → in-memory local replay
 
 Local replay file → sampled frames → isolated inference worker → JSON evidence
@@ -39,7 +40,15 @@ Receipts retain 64 transitions with human/pixels/system attribution, reference v
 
 ## Failure policy
 
-No usable frame: do not claim active playback. No fresh inference: status becomes unknown; unresolved obstruction stays unresolved. A model exception is a failed sample, not evidence of no parcel. Clip-end is not proof of removal. The AI and calibrated scene-change workflows are separate and must not be conflated. The illustrated demo proves decision behavior only, not perception performance.
+No usable frame: do not claim active playback. No fresh inference: status becomes unknown; unresolved obstruction stays unresolved. A model exception is a failed sample, not evidence of no parcel. Clip-end is not proof of removal. The AI observation state and calibrated scene-change workflows are separate and must not be conflated. Live AI concerns are additionally latched until the viewer saves a checked-empty reference from a fresh visible camera; negative predictions, model shutdown and GPU failure cannot close them. Confirming an AI suggestion creates a **human report**, not falsely attributed automatic sensor evidence. The existing private metadata schema and owner policies are unchanged. The illustrated demo proves decision behavior only, not perception performance.
+
+## Optional edge inference
+
+The live controls expose the existing pinned Grounding DINO Tiny alternative alongside OWL-ViT. Model downloads are opt-in; no paid API or cloud frame upload is introduced. Auto runtime attempts WebGPU when the API exists, falls back to WebAssembly on load failure, and retries a GPU inference failure once on CPU. CPU failure remains an error. Compatibility mode never attempts GPU. Actual runtime, quantization, selected model/revision, source-frame time and measured latency accompany live JSON observations. OWL-ViT still uses the mutable `main` revision; those receipts are not fully reproducible model snapshots.
+
+Both frame axes are bounded to 640 pixels, including portrait input. Worker input requires exact RGBA length. Malformed/oversized prediction batches fail the inference instead of becoming negative observations. Duplicate or reversed track timestamps cannot accumulate persistence. Hidden-page results are rejected. Grounding DINO is **not** a demonstrated accuracy improvement: the earlier CPU replay timed out, and the baseline missed the initial Ring parcel. GPU speed, browser coverage and real-world recognition remain validation gates. Worker tests mock the pipeline and establish orchestration, not perception accuracy.
+
+The default library runtime CDN conflicted with this app's CSP during a real browser load. Dev/build now mechanically copy the two executable runtime assets from the pinned dependency to `public/inference-runtime/`; workers select that same-origin path. Middleware exempts only the two exact asset names, not a whole directory or any camera API. CSP is unchanged. Generated binaries are ignored by Git, and associated third-party licenses are copied with them.
 
 Frames must have positive integer dimensions, a complete RGBA buffer and at most 307,200 pixels. Malformed or resized observations invalidate the reference without resolving concern. Capture is downsampled to 240 pixels wide and at most 720 high. A 1.5-second observation gap, frozen video or hidden page pauses monitoring; receipts name the interruption reason. These are processing guards, not accuracy certification.
 

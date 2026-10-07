@@ -11,6 +11,14 @@ test('public registration requires separate explicit release approval',()=>{
   assert.equal(policy({CLEARDROP_PUBLIC_DEMO:'1',CLEARDROP_PUBLIC_SIGNUP:'1'}).publicSignupEnabled(),true)
   assert.equal(policy({}).publicSignupEnabled(),true)
 })
+test('only exact public runtime assets bypass account middleware',()=>{
+ const p=policy({})
+ for(const route of ['/inference-runtime/ort-wasm-simd-threaded.jsep.mjs','/inference-runtime/ort-wasm-simd-threaded.jsep.wasm'])assert.equal(p.publicDemoPath(route),true)
+ for(const route of ['/inference-runtime/private','/inference-runtime/../api/ring/token','/inference-runtime/ort-wasm-simd-threaded.jsep.mjs/extra'])assert.equal(p.publicDemoPath(route),false)
+ const source=fs.readFileSync(path.join(__dirname,'../app/workers/package.worker.ts'),'utf8')
+ assert.match(source,/wasmPaths = new URL\('\/inference-runtime\/'/)
+ assert.match(fs.readFileSync(path.join(__dirname,'../package.json'),'utf8'),/prepare-inference-runtime.cjs/)
+})
 test('middleware authenticates non-public routes or fails closed',()=>{
   const source=fs.readFileSync(path.join(__dirname,'../middleware.ts'),'utf8')
   assert.match(source,/if \(publicDemoPath\(request.nextUrl.pathname\)\) return NextResponse.next\(\)/)

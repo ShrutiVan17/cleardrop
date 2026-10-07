@@ -1,6 +1,13 @@
 import type { Zone } from './obstruction'
 export type Detection = { label: string; score: number; box: { xmin: number; ymin: number; xmax: number; ymax: number } }
 export const PACKAGE_LABELS = ['a cardboard box', 'a padded mailing envelope', 'a plastic delivery parcel']
+export function validDetectionBatch(value: unknown): value is Detection[] {
+  return Array.isArray(value) && value.length <= 64 && value.every(d =>
+    d && typeof d === 'object' && typeof d.label === 'string' && d.label.length <= 120 &&
+    Number.isFinite(d.score) && d.score >= 0 && d.score <= 1 && d.box &&
+    ['xmin','ymin','xmax','ymax'].every(key => Number.isFinite(d.box[key])) &&
+    d.box.xmax > d.box.xmin && d.box.ymax > d.box.ymin)
+}
 export function intersection(a: Detection['box'], b: Detection['box']) {
   return Math.max(0, Math.min(a.xmax,b.xmax)-Math.max(a.xmin,b.xmin)) * Math.max(0,Math.min(a.ymax,b.ymax)-Math.max(a.ymin,b.ymin))
 }
@@ -17,6 +24,8 @@ export function packagesInZone(detections: Detection[], zone: Zone) {
 }
 export type PackageTrack = { box: Detection['box']; since: number; last: number; hits: number; alert: boolean }
 export function trackPackage(previous: PackageTrack | null, detections: ReturnType<typeof packagesInZone>, time: number): PackageTrack | null {
+  if (!Number.isFinite(time) || time < 0) return previous
+  if (previous && time <= previous.last) return previous
   const candidates = detections.filter(d => d.overlap >= .25)
   const match = previous && time-previous.last <= 15000 ? candidates.find(d => iou(previous.box,d.box) >= .3) : undefined
   const d = match || candidates[0]

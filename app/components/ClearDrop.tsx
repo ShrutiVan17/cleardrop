@@ -8,6 +8,8 @@ import { useChangeMonitor } from '../hooks/useChangeMonitor'
 import { usePackageDetection } from '../hooks/usePackageDetection'
 import { useDeliveryReview } from '../hooks/useDeliveryReview'
 import { DeliveryReviewPanel } from './DeliveryReviewPanel'
+import { DETECTOR_MODELS, DetectorModel } from '@/lib/detector-models'
+import type { RuntimePreference } from '@/lib/inference-runtime'
 
 type Entry = { id: number; time: string; kind: string; detail: string }
 const defaultZone: Zone = { x: .3, y: .5, w: .4, h: .4 }
@@ -26,7 +28,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
   const { ready, ratio, blocked, unresolved, reportedParcel } = monitoring.observation
   const reviews = useDeliveryReview(monitoring.observation, source, deviceId)
   const previousBlocked = useRef(false)
-  const packages = usePackageDetection(videoRef, active, zone, editing)
+  const packages = usePackageDetection(videoRef, active, zone, editing, deviceId)
   useEffect(() => {
     if (packages.alert) log('AI parcel overlap', 'Repeated model detections overlap the doorway zone. Visually verify before acting.')
   }, [packages.alert])
@@ -74,6 +76,7 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
 
   function calibrate(reportedParcelRemoved = false) {
     if (monitoring.calibrate(emptyChecked, reportedParcelRemoved)) {
+      packages.confirmEmpty(emptyChecked,monitoring.isFresh())
       setEmptyChecked(false); setError('')
       log('Reference saved', 'Current frame marked as an empty doorway. Monitoring started.')
     }
@@ -114,7 +117,8 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
       </div>}
       {editing && <fieldset className="mt-4"><legend className="text-sm mb-2">Area position (percent of video)</legend><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{(['x','y','w','h'] as const).map(key => <label key={key} className="text-sm">{{x:'Left',y:'Top',w:'Width',h:'Height'}[key]}<input className="cd-input" type="number" min={key==='w'||key==='h'?3:0} max={100} value={Math.round(zone[key]*100)} onChange={e => { const v=Math.max(0,Math.min(1,Number(e.target.value)/100)); setZone(z => { const n={...z,[key]:v}; n.w=Math.min(n.w,1-n.x); n.h=Math.min(n.h,1-n.y); return n }) }} /></label>)}</div></fieldset>}
       {blocked && <div role="alert" className="cd-review-alert"><p>A change stayed in the marked area for three seconds. Is a parcel blocking the doorway?</p><div className="flex flex-wrap gap-2 mt-3"><button className="cd-button" onClick={reportParcel}>Yes, there’s a parcel</button><button className="cd-button" onClick={() => { reset(); log('Dismissed', 'Monitoring paused. Clear the area and save a new reference before continuing.') }}>Dismiss and pause</button></div></div>}
-      {packages.status!=='off' && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
+      {packages.alert && !reportedParcel && <div className="cd-review-alert" role="alert"><p>The model repeatedly suggested a parcel in your marked area. Check the video yourself; this is not a confirmed obstruction.</p><button className="cd-button mt-3" disabled={!active || editing} onClick={reportParcel}>I see a parcel — start a review</button><p className="cd-help">A missed detection or stopped model won’t remove this concern. If the area is genuinely empty, save a checked empty reference in More options.</p></div>}
+      {(packages.status!=='off' || packages.alert) && <p className="cd-help" role="status">{packages.doorwayStatus}</p>}
       <DeliveryReviewPanel flow={reviews} fresh={monitoring.isFresh} source={source} />
       {(error || monitoring.error) && <p role="alert" className="cd-error mt-3">{error || monitoring.error}</p>}
       <p className="cd-fine-print">Shadows, people, and camera movement can also cause alerts. An alert needs your review. This does not measure parcel size or physical walking clearance.</p>
@@ -134,14 +138,17 @@ export function ClearDrop({ videoRef, active, deviceId, fixedZone, onObservation
         <h3 className="font-semibold mt-3">Review history</h3>
         <p className="cd-help">Download this session’s decisions and their source: your confirmation, pixel changes, or a camera interruption. No video, tokens or account details are included. This is local history, not a tamper-proof audit log.</p>
         <button className="cd-button mt-3" onClick={monitoring.exportReceipt}>Download review history</button>
-        {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><label className="flex gap-2 my-3"><input type="checkbox" checked={emptyChecked} onChange={e => setEmptyChecked(e.target.checked)} /><span>I visually checked that the marked area is empty before replacing the reference.</span></label><button className="cd-button" disabled={editing || !emptyChecked} onClick={() => calibrate()}>Save a new empty reference</button></div>}
+        {active && ready && <div className="mb-4"><p className="cd-help">Changed area: {Math.round(ratio*100)}%. This is not a confidence score.</p><label className="flex gap-2 my-3"><input type="checkbox" checked={emptyChecked} onChange={e => setEmptyChecked(e.target.checked)} /><span>I visually checked that the marked area is empty before replacing the reference.</span></label><button className="cd-button" disabled={editing || !emptyChecked} onClick={() => calibrate(reportedParcel)}>Save a new empty reference</button></div>}
         <h3 className="font-semibold mt-3">Experimental parcel recognition</h3>
-        <p className="cd-help">This model missed the parcel in our initial Ring test. It can miss or misidentify objects. No detection does not mean the doorway is clear.</p>
-        <p className="cd-help">Optional download: about 155 MB plus runtime files. Frames stay on this device. You do not need this model for change alerts.</p>
+        <p className="cd-help">Grounding DINO is an alternative to the OWL-ViT baseline, which missed the parcel in our initial Ring test. Neither is validated for reliable parcel recognition. No detection does not mean the doorway is clear.</p>
+        <p className="cd-help">Optional download: about {DETECTOR_MODELS[packages.modelKey || 'grounding'].q8MB} MB plus runtime files. Frames stay on this device. You do not need this model for change alerts.</p>
+        <label className="block mt-3">Recognition model<select className="cd-input" disabled={packages.status==='loading' || packages.status==='ready'} value={packages.modelKey} onChange={event=>packages.configure(event.target.value as DetectorModel,packages.runtime)}>{Object.entries(DETECTOR_MODELS).map(([key,model])=><option key={key} value={key}>{model.name}</option>)}</select></label>
+        <label className="block mt-3">Run on this device<select className="cd-input" disabled={packages.status==='loading' || packages.status==='ready'} value={packages.runtime} onChange={event=>packages.configure(packages.modelKey,event.target.value as RuntimePreference)}><option value="auto">GPU if supported, otherwise CPU</option><option value="wasm">CPU — compatibility mode</option></select></label>
         <div className="flex gap-2 mt-3">
           {(packages.status==='off'||packages.status==='error') ? <button className="cd-button" onClick={packages.enable}>Load experimental model</button> : <button className="cd-button" onClick={packages.disable}>{packages.status==='loading'?'Cancel download':'Turn off model'}</button>}
         </div>
         <p className="cd-help" role="status">{packages.message} · {packages.scans} scans{packages.latency!==null ? ` · last scan ${(packages.latency/1000).toFixed(1)}s` : ''}</p>
+        {packages.backend && <p className="cd-help">Actual runtime: {packages.backend==='webgpu'?'WebGPU':'WebAssembly CPU'} · quantized q8{packages.fallback?' · GPU failed; CPU fallback is active':''}. Runtime speed and parcel accuracy have not been benchmarked.</p>}
         {packages.receipt && <div className="mt-3"><p className="cd-help">Download the last actual model observation, its timestamp and current review status. This contains no video or credentials.</p><button className="cd-button" onClick={packages.exportReceipt}>Download AI observation</button></div>}
         {entries.length > 0 && <div className="mt-5"><div className="flex justify-between items-center"><h3 className="font-semibold">Recent activity</h3><button className="cd-button" onClick={() => setEntries([])}>Clear list</button></div><ol className="space-y-3 mt-3 max-h-48 overflow-auto">{entries.map(entry => <li key={entry.id} className="text-sm"><div className="flex justify-between gap-3"><strong className="font-medium">{entry.kind}</strong><time>{entry.time}</time></div><p className="cd-help">{entry.detail}</p></li>)}</ol></div>}
       </details>

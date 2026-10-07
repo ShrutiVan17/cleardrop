@@ -6,6 +6,7 @@ import { Expectation, ReplaySample, sampleTimes, summarizeReplay } from '@/lib/r
 import { createPipelineClip } from '@/lib/synthetic-replay'
 import type { CapturedClip } from './RingReplayCapture'
 import { DETECTOR_MODELS, DetectorModel } from '@/lib/detector-models'
+import { inferenceFrameSize } from '@/lib/inference-runtime'
 
 type Run = {version:1; source:'local-replay'; clip:{name:string;bytes:number;duration:number;synthetic:boolean;origin:string;durationEstimated:boolean}; expected:Expectation; zone:Zone; startedAt:string; complete:boolean; planned:number; samples:ReplaySample[]; configuration:object}
 type Pending = {resolve:(value:Detection[])=>void; reject:(error:Error)=>void; timer:ReturnType<typeof setTimeout>}
@@ -93,10 +94,10 @@ export function ReplayLab({initialClip}:{initialClip?:CapturedClip|null}) {
     let times:number[]
     try{times=sampleTimes(duration)}catch(e){setError((e as Error).message);return}
     const id=++generation.current
-    const record:Run={version:1,source:'local-replay',clip:{name:file.name,bytes:file.size,duration,synthetic,origin,durationEstimated:durationHint.current!==null},expected:synthetic?'unlabeled':expected,zone:{...zone},startedAt:new Date().toISOString(),complete:false,planned:times.length,samples:[],configuration:{model:selectedModel.id,modelRevision:selectedModel.revision,runtime:'Transformers.js 3.8.1',dtype,device:'wasm',queries:PACKAGE_LABELS,modelThreshold:selectedModel.threshold,scoreThreshold:.15,overlapThreshold:.25,intervalSeconds:2,resizeWidth:640,metric:'sampled-frame classification; not event-level or safety accuracy'}}
+    const record:Run={version:1,source:'local-replay',clip:{name:file.name,bytes:file.size,duration,synthetic,origin,durationEstimated:durationHint.current!==null},expected:synthetic?'unlabeled':expected,zone:{...zone},startedAt:new Date().toISOString(),complete:false,planned:times.length,samples:[],configuration:{model:selectedModel.id,modelRevision:selectedModel.revision,runtime:'Transformers.js 3.8.1',dtype,device:'wasm',queries:PACKAGE_LABELS,modelThreshold:selectedModel.threshold,scoreThreshold:.15,overlapThreshold:.25,intervalSeconds:2,maxFrameEdge:640,metric:'sampled-frame classification; not event-level or safety accuracy'}}
     setRun(record);setRunning(true);setError('');setBoxes([])
     const v=video.current;v.pause()
-    const canvas=document.createElement('canvas');canvas.width=640;canvas.height=Math.round(640*v.videoHeight/v.videoWidth)
+    const canvas=document.createElement('canvas'),size=inferenceFrameSize(v.videoWidth,v.videoHeight);canvas.width=size.width;canvas.height=size.height
     const ctx=canvas.getContext('2d',{willReadFrequently:true})!
     try {
       for(const time of times) {

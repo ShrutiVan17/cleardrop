@@ -32,3 +32,6 @@ dist/
 # Misc
 *.log
 *.tsbuildinfo
+
+# Generated from the pinned dependency during dev/build; never upload binaries.
+public/inference-runtime/

@@ -7,4 +7,4 @@
 - The tested Ring Package sandbox displayed: “Thief stealing our package” by frollard, CC BY 4.0, clipped by the sandbox. Original: https://www.youtube.com/watch?v=TfTFu8lGrwk ; license: https://creativecommons.org/licenses/by/4.0/ . Include attribution and note your edits if publishing excerpts. This attribution does not apply to other sandbox scenarios or real device footage.
 - Ring and Amazon names identify the integration. ClearDrop is an independent prototype, not an endorsed or certified Amazon/Ring product.
 - Dependencies retain their respective licenses; no dependency/model license is replaced by this repository's MIT license.
-
+- The pinned Transformers.js 3.8.1 distribution supplies the same-origin ONNX runtime module and WASM binary. The build copies its Apache-2.0 license and the [ONNX Runtime MIT license](https://github.com/microsoft/onnxruntime/blob/v1.22.0/LICENSE) alongside the generated runtime assets. Runtime copying does not redistribute model weights as ClearDrop-owned assets.

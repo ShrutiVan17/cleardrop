@@ -17,6 +17,7 @@ export function validInferenceSample(sample: {
 export type InferenceReceipt = {
   version: 1; source: 'local-live-model'; observedAt: string
   model: string; revision: string; frameMediaTime: number; inferenceMs: number
+  backend?: 'wasm' | 'webgpu'; dtype?: 'q8' | 'fp32'
   detections: Detection[]; decision: string; previousObstructionUnresolved: boolean
   limitation: string
 }
