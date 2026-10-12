@@ -3,6 +3,9 @@ A delivery should not block the doorway.
 
 ClearDrop is a local-first doorway-access prototype: a delivery photo tells you what arrived; ClearDrop helps you review whether a personally marked keep-clear area changed, whether the change persisted, and whether removal is actually known. A camera disconnect is not an all-clear. It does not measure physical clearance or guarantee safety.
 
+## Watch
+Watch the [2:29 narrated walkthrough](https://www.youtube.com/watch?v=Z9k4dOO3cAM). It separates earlier Ring Playground playback, an earlier phone-camera test and generated-video processing checks. Model initialization is shown separately from recognition accuracy; narration is synthetic, and footage credits are included in the video description.
+
 ## Start
 Verified with Node.js 24.19.0 and pnpm 11.19.0.
 
